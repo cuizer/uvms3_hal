@@ -13,7 +13,7 @@ def generate_launch_description():
     return LaunchDescription([
         simulation_mode_arg,
         LifecycleNode(
-            package='power_hal',
+            package='hal',
             executable='hal_battery_node',
             name='hal_battery_node',
             namespace='',

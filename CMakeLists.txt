@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(power_hal)
+project(hal)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -19,7 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES std_msgs builtin_interfaces
 )
 
-add_executable(hal_battery_node src/hal_battery_node.cpp src/can_interface.cpp)
+add_executable(hal_battery_node src/hal_battery_node.cpp)
 ament_target_dependencies(hal_battery_node
   rclcpp
   rclcpp_lifecycle
