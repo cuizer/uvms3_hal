@@ -1,9 +1,0 @@
-/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator/CMakeFiles/uninstall.dir
-/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator/CMakeFiles/uvms_hal_manipulator_uninstall.dir
-/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator/CMakeFiles/test.dir
-/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator/CMakeFiles/edit_cache.dir
-/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator/CMakeFiles/rebuild_cache.dir
-/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator/CMakeFiles/list_install_components.dir
-/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator/CMakeFiles/install.dir
-/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator/CMakeFiles/install/local.dir
-/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator/CMakeFiles/install/strip.dir
