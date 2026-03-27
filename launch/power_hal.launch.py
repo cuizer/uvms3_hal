@@ -14,8 +14,8 @@ def generate_launch_description():
         simulation_mode_arg,
         LifecycleNode(
             package='power_hal',
-            executable='power_hal_node',
-            name='Power_Hal',
+            executable='hal_battery_node',
+            name='hal_battery_node',
             namespace='',
             output='screen',
             parameters=[{
