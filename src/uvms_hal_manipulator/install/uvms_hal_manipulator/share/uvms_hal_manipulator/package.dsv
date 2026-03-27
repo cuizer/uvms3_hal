@@ -1,0 +1,8 @@
+source;share/uvms_hal_manipulator/hook/cmake_prefix_path.ps1
+source;share/uvms_hal_manipulator/hook/cmake_prefix_path.dsv
+source;share/uvms_hal_manipulator/hook/cmake_prefix_path.sh
+source;share/uvms_hal_manipulator/local_setup.bash
+source;share/uvms_hal_manipulator/local_setup.dsv
+source;share/uvms_hal_manipulator/local_setup.ps1
+source;share/uvms_hal_manipulator/local_setup.sh
+source;share/uvms_hal_manipulator/local_setup.zsh

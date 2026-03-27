@@ -1,0 +1,68 @@
+[0.080s] Invoking command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator -DCMAKE_INSTALL_PREFIX=/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator
+[0.475s] -- The C compiler identification is GNU 11.4.0
+[0.623s] -- The CXX compiler identification is GNU 11.4.0
+[0.636s] -- Detecting C compiler ABI info
+[0.740s] -- Detecting C compiler ABI info - done
+[0.745s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.745s] -- Detecting C compile features
+[0.746s] -- Detecting C compile features - done
+[0.751s] -- Detecting CXX compiler ABI info
+[0.850s] -- Detecting CXX compiler ABI info - done
+[0.854s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.854s] -- Detecting CXX compile features
+[0.855s] -- Detecting CXX compile features - done
+[0.925s] -- Found ament_cmake: 1.3.13 (/opt/ros/humble/share/ament_cmake/cmake)
+[1.117s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[1.391s] -- Found rclcpp: 16.0.18 (/opt/ros/humble/share/rclcpp/cmake)
+[1.498s] -- Found rosidl_generator_c: 3.1.8 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[1.505s] -- Found rosidl_adapter: 3.1.8 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[1.522s] -- Found rosidl_generator_cpp: 3.1.8 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[1.551s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.582s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.664s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[1.669s] -- Found rmw_fastrtps_cpp: 6.2.10 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[1.860s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[1.883s] -- Found FastRTPS: /opt/ros/humble/include  
+[1.912s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[1.932s] -- Looking for pthread.h
+[2.055s] -- Looking for pthread.h - found
+[2.056s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[2.170s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[2.170s] -- Found Threads: TRUE  
+[2.355s] -- Found rclcpp_lifecycle: 16.0.18 (/opt/ros/humble/share/rclcpp_lifecycle/cmake)
+[2.477s] -- Found sensor_msgs: 4.9.1 (/opt/ros/humble/share/sensor_msgs/cmake)
+[2.639s] -- Found std_srvs: 4.9.1 (/opt/ros/humble/share/std_srvs/cmake)
+[2.683s] -- Found ament_lint_auto: 0.12.15 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[2.852s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[2.852s] -- Configured cppcheck include dirs: 
+[2.852s] -- Configured cppcheck exclude dirs and/or files: 
+[2.852s] -- Added test 'flake8' to check Python code syntax and style conventions
+[2.854s] -- Added test 'lint_cmake' to check CMake code style
+[2.855s] -- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+[2.862s] -- Added test 'uncrustify' to check C / C++ code style
+[2.862s] -- Configured uncrustify additional arguments: 
+[2.864s] -- Added test 'xmllint' to check XML markup files
+[2.867s] -- Configuring done
+[2.875s] -- Generating done
+[2.877s] -- Build files have been written to: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator
+[2.890s] Invoked command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator -DCMAKE_INSTALL_PREFIX=/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator
+[2.893s] Invoking command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator -- -j2 -l2
+[2.939s] Invoked command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator -- -j2 -l2
+[2.950s] Invoking command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator
+[2.964s] -- Install configuration: ""
+[2.964s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/ament_index/resource_index/package_run_dependencies/uvms_hal_manipulator
+[2.964s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/ament_index/resource_index/parent_prefix_path/uvms_hal_manipulator
+[2.964s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/environment/ament_prefix_path.sh
+[2.964s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/environment/ament_prefix_path.dsv
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/environment/path.sh
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/environment/path.dsv
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/local_setup.bash
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/local_setup.sh
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/local_setup.zsh
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/local_setup.dsv
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/package.dsv
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/ament_index/resource_index/packages/uvms_hal_manipulator
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/cmake/uvms_hal_manipulatorConfig.cmake
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/cmake/uvms_hal_manipulatorConfig-version.cmake
+[2.965s] -- Installing: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/package.xml
+[2.968s] Invoked command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator

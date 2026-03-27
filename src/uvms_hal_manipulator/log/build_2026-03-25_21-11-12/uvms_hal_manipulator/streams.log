@@ -1,0 +1,20 @@
+[0.022s] Invoking command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator -- -j2 -l2
+[0.107s] Invoked command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator -- -j2 -l2
+[0.128s] Invoking command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator
+[0.153s] -- Install configuration: ""
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/ament_index/resource_index/package_run_dependencies/uvms_hal_manipulator
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/ament_index/resource_index/parent_prefix_path/uvms_hal_manipulator
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/environment/ament_prefix_path.sh
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/environment/ament_prefix_path.dsv
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/environment/path.sh
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/environment/path.dsv
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/local_setup.bash
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/local_setup.sh
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/local_setup.zsh
+[0.153s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/local_setup.dsv
+[0.155s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/package.dsv
+[0.155s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/ament_index/resource_index/packages/uvms_hal_manipulator
+[0.155s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/cmake/uvms_hal_manipulatorConfig.cmake
+[0.155s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/cmake/uvms_hal_manipulatorConfig-version.cmake
+[0.155s] -- Up-to-date: /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/install/uvms_hal_manipulator/share/uvms_hal_manipulator/package.xml
+[0.155s] Invoked command in '/home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ss/uvms/uvms_ws/src/uvms_hal_manipulator/build/uvms_hal_manipulator
