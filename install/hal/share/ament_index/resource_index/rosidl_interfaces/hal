@@ -1,6 +1,0 @@
-msg/HalBatteryMsg.idl
-msg/HalBatteryMsg.msg
-srv/HalBatteryControlSrv.idl
-srv/HalBatteryControlSrv.srv
-srv/HalBatteryControlSrv_Request.msg
-srv/HalBatteryControlSrv_Response.msg
