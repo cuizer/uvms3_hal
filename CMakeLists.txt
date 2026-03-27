@@ -5,6 +5,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# 1. 查找所有必要依赖
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -13,49 +14,44 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 
+# 2. 生成自定义接口 (电池相关) 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HalBatteryMsg.msg"
   "srv/HalBatteryControlSrv.srv"
   DEPENDENCIES std_msgs builtin_interfaces
 )
 
+# 3. 添加三个独立的可执行程序
+# A. 电池管理节点
 add_executable(hal_battery_node src/hal_battery_node.cpp)
-ament_target_dependencies(hal_battery_node
-  rclcpp
-  rclcpp_lifecycle
-  lifecycle_msgs
-  std_msgs
-)
+ament_target_dependencies(hal_battery_node rclcpp rclcpp_lifecycle lifecycle_msgs std_msgs)
 
-target_include_directories(hal_battery_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
+# B. 天线控制节点 (#15)
+add_executable(hal_antennacontrol_node src/hal_antennacontrol_node.cpp)
+ament_target_dependencies(hal_antennacontrol_node rclcpp rclcpp_lifecycle lifecycle_msgs std_msgs)
 
+# C. 灯光控制节点 (#14)
+add_executable(hal_lightcontrol_node src/hal_lightcontrol_node.cpp)
+ament_target_dependencies(hal_lightcontrol_node rclcpp rclcpp_lifecycle lifecycle_msgs std_msgs)
+
+# 4. 链接消息类型支持 (确保所有节点都能识别自定义 msg/srv) 
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(hal_battery_node ${cpp_typesupport_target})
+target_link_libraries(hal_antennacontrol_node ${cpp_typesupport_target})
+target_link_libraries(hal_lightcontrol_node ${cpp_typesupport_target})
+
+# 5. 安装配置
 install(TARGETS
   hal_battery_node
+  hal_antennacontrol_node
+  hal_lightcontrol_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}/
-)
-
-install(DIRECTORY include/
-  DESTINATION include/
-)
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY include/ DESTINATION include/)
 
 ament_export_dependencies(rosidl_default_runtime)
-
-rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(hal_battery_node ${cpp_typesupport_target})
-
-ament_export_dependencies(
-  rclcpp
-  rclcpp_lifecycle
-  lifecycle_msgs
-  std_msgs
-)
+ament_export_dependencies(rclcpp rclcpp_lifecycle lifecycle_msgs std_msgs)
 
 ament_package()

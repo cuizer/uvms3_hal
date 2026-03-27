@@ -1,0 +1,2 @@
+/home/user/uvms3_hal/build/hal/rosidl_adapter/hal:msg/HalBatteryMsg.idl
+/home/user/uvms3_hal/build/hal/rosidl_adapter/hal:srv/HalBatteryControlSrv.idl

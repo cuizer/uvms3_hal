@@ -1,0 +1,7 @@
+{
+  "package_name": "hal",
+  "non_idl_tuples": [
+    "/home/user/uvms3_hal:msg/HalBatteryMsg.msg",
+    "/home/user/uvms3_hal:srv/HalBatteryControlSrv.srv"
+  ]
+}
