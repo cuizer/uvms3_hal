@@ -1,0 +1,6 @@
+Invoking command in '/home/ss/uvms/uvms3_hal/build/hal': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/ss/uvms/uvms3_hal -DCMAKE_INSTALL_PREFIX=/home/ss/uvms/uvms3_hal/install/hal
+Invoked command in '/home/ss/uvms/uvms3_hal/build/hal' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/ss/uvms/uvms3_hal -DCMAKE_INSTALL_PREFIX=/home/ss/uvms/uvms3_hal/install/hal
+Invoking command in '/home/ss/uvms/uvms3_hal/build/hal': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ss/uvms/uvms3_hal/build/hal -- -j2 -l2
+Invoked command in '/home/ss/uvms/uvms3_hal/build/hal' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ss/uvms/uvms3_hal/build/hal -- -j2 -l2
+Invoking command in '/home/ss/uvms/uvms3_hal/build/hal': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ss/uvms/uvms3_hal/build/hal
+Invoked command in '/home/ss/uvms/uvms3_hal/build/hal' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ss/uvms/uvms3_hal/build/hal

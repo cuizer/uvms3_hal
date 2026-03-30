@@ -1,0 +1,41 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_auxithruster_msg__type_support.c.o"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_auxithruster_msg__type_support.c.o.d"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_battery_msg__type_support.c.o"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_battery_msg__type_support.c.o.d"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_mainthruster_msg__type_support.c.o"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_mainthruster_msg__type_support.c.o.d"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_tailservo_msg__type_support.c.o"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_tailservo_msg__type_support.c.o.d"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_wingservo_msg__type_support.c.o"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_wingservo_msg__type_support.c.o.d"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/srv/detail/hal_battery_control_srv__type_support.c.o"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/srv/detail/hal_battery_control_srv__type_support.c.o.d"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/srv/detail/hal_servocontrol_srv__type_support.c.o"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/srv/detail/hal_servocontrol_srv__type_support.c.o.d"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/srv/detail/hal_thrustercontrol_srv__type_support.c.o"
+  "CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/srv/detail/hal_thrustercontrol_srv__type_support.c.o.d"
+  "libhal__rosidl_typesupport_introspection_c.pdb"
+  "libhal__rosidl_typesupport_introspection_c.so"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_auxithruster_msg__rosidl_typesupport_introspection_c.h"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_auxithruster_msg__type_support.c"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_battery_msg__rosidl_typesupport_introspection_c.h"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_battery_msg__type_support.c"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_mainthruster_msg__rosidl_typesupport_introspection_c.h"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_mainthruster_msg__type_support.c"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_tailservo_msg__rosidl_typesupport_introspection_c.h"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_tailservo_msg__type_support.c"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_wingservo_msg__rosidl_typesupport_introspection_c.h"
+  "rosidl_typesupport_introspection_c/hal/msg/detail/hal_wingservo_msg__type_support.c"
+  "rosidl_typesupport_introspection_c/hal/srv/detail/hal_battery_control_srv__rosidl_typesupport_introspection_c.h"
+  "rosidl_typesupport_introspection_c/hal/srv/detail/hal_battery_control_srv__type_support.c"
+  "rosidl_typesupport_introspection_c/hal/srv/detail/hal_servocontrol_srv__rosidl_typesupport_introspection_c.h"
+  "rosidl_typesupport_introspection_c/hal/srv/detail/hal_servocontrol_srv__type_support.c"
+  "rosidl_typesupport_introspection_c/hal/srv/detail/hal_thrustercontrol_srv__rosidl_typesupport_introspection_c.h"
+  "rosidl_typesupport_introspection_c/hal/srv/detail/hal_thrustercontrol_srv__type_support.c"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang C)
+  include(CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

@@ -1,0 +1,8 @@
+[01m[K/home/ss/uvms/uvms3_hal/src/hal_antennacontrol_node.cpp:[m[K In member function ‘[01m[Kvoid HalAntennaControlNode::run_motor(int)[m[K’:
+[01m[K/home/ss/uvms/uvms3_hal/src/hal_antennacontrol_node.cpp:110:24:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kdir[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+  110 |     void run_motor([01;35m[Kint dir[m[K) { /* 许延轩：此处添加驱动代码 */ }
+      |                    [01;35m[K~~~~^~~[m[K
+[01m[K/home/ss/uvms/uvms3_hal/src/hal_antennacontrol_node.cpp:[m[K In member function ‘[01m[Kbool HalAntennaControlNode::read_limit_switch(int)[m[K’:
+[01m[K/home/ss/uvms/uvms3_hal/src/hal_antennacontrol_node.cpp:112:32:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kid[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+  112 |     bool read_limit_switch([01;35m[Kint id[m[K) { return false; }
+      |                            [01;35m[K~~~~^~[m[K

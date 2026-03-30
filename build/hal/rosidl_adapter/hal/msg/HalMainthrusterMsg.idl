@@ -1,0 +1,18 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from hal/msg/HalMainthrusterMsg.msg
+// generated code does not contain a copyright notice
+
+
+module hal {
+  module msg {
+    struct HalMainthrusterMsg {
+      int16 rpm;
+
+      int16 current;
+
+      int16 voltage;
+
+      uint8 fault_status;
+    };
+  };
+};

@@ -1,0 +1,523 @@
+[0.010s] Invoking command in '/home/ss/uvms/uvms3_hal/build/hal': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/ss/uvms/uvms3_hal -DCMAKE_INSTALL_PREFIX=/home/ss/uvms/uvms3_hal/install/hal
+[0.778s] -- The C compiler identification is GNU 11.4.0
+[0.876s] -- The CXX compiler identification is GNU 11.4.0
+[0.897s] -- Detecting C compiler ABI info
+[0.999s] -- Detecting C compiler ABI info - done
+[1.006s] -- Check for working C compiler: /usr/bin/cc - skipped
+[1.006s] -- Detecting C compile features
+[1.007s] -- Detecting C compile features - done
+[1.009s] -- Detecting CXX compiler ABI info
+[1.128s] -- Detecting CXX compiler ABI info - done
+[1.132s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[1.133s] -- Detecting CXX compile features
+[1.135s] -- Detecting CXX compile features - done
+[1.183s] -- Found ament_cmake: 1.3.13 (/opt/ros/humble/share/ament_cmake/cmake)
+[1.349s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[1.444s] -- Found rclcpp: 16.0.18 (/opt/ros/humble/share/rclcpp/cmake)
+[1.475s] -- Found rosidl_generator_c: 3.1.8 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[1.479s] -- Found rosidl_adapter: 3.1.8 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[1.490s] -- Found rosidl_generator_cpp: 3.1.8 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[1.501s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.518s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.552s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[1.554s] -- Found rmw_fastrtps_cpp: 6.2.10 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[1.717s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[1.741s] -- Found FastRTPS: /opt/ros/humble/include  
+[1.777s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[1.783s] -- Looking for pthread.h
+[1.935s] -- Looking for pthread.h - found
+[1.935s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[2.032s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[2.032s] -- Found Threads: TRUE  
+[2.070s] -- Found rclcpp_lifecycle: 16.0.18 (/opt/ros/humble/share/rclcpp_lifecycle/cmake)
+[2.103s] -- Found sensor_msgs: 4.9.1 (/opt/ros/humble/share/sensor_msgs/cmake)
+[2.149s] -- Found std_srvs: 4.9.1 (/opt/ros/humble/share/std_srvs/cmake)
+[2.164s] -- Found trajectory_msgs: 4.9.1 (/opt/ros/humble/share/trajectory_msgs/cmake)
+[2.187s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[2.470s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[2.823s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[2.941s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[2.960s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") 
+[2.961s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[3.032s] -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") 
+[3.032s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[3.033s] -- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10
+[3.033s] -- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+[3.049s] -- Found PythonExtra: .so  
+[3.124s] -- Configuring done
+[3.277s] -- Generating done
+[3.314s] -- Build files have been written to: /home/ss/uvms/uvms3_hal/build/hal
+[3.325s] Invoked command in '/home/ss/uvms/uvms3_hal/build/hal' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/ss/uvms/uvms3_hal -DCMAKE_INSTALL_PREFIX=/home/ss/uvms/uvms3_hal/install/hal
+[3.328s] Invoking command in '/home/ss/uvms/uvms3_hal/build/hal': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ss/uvms/uvms3_hal/build/hal -- -j2 -l2
+[3.370s] [  1%] [34m[1mGenerating C code for ROS interfaces[0m
+[3.390s] [  1%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[4.368s] [  1%] Built target hal__cpp
+[4.415s] [  1%] Built target ament_cmake_python_copy_hal
+[4.449s] [  2%] [32mBuilding CXX object CMakeFiles/hal_manipulator_node.dir/src/hal_manipulator_main.cpp.o[0m
+[4.503s] [  3%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_c.dir/rosidl_generator_c/hal/msg/detail/hal_tailservo_msg__functions.c.o[0m
+[4.579s] [  4%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_c.dir/rosidl_generator_c/hal/msg/detail/hal_wingservo_msg__functions.c.o[0m
+[4.648s] [  5%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_c.dir/rosidl_generator_c/hal/msg/detail/hal_mainthruster_msg__functions.c.o[0m
+[4.694s] [  6%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_c.dir/rosidl_generator_c/hal/msg/detail/hal_auxithruster_msg__functions.c.o[0m
+[4.756s] [  7%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_c.dir/rosidl_generator_c/hal/srv/detail/hal_servocontrol_srv__functions.c.o[0m
+[4.823s] [  8%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_c.dir/rosidl_generator_c/hal/srv/detail/hal_thrustercontrol_srv__functions.c.o[0m
+[4.906s] [  9%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_c.dir/rosidl_generator_c/hal/msg/detail/hal_battery_msg__functions.c.o[0m
+[4.971s] [ 10%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_c.dir/rosidl_generator_c/hal/srv/detail/hal_battery_control_srv__functions.c.o[0m
+[5.044s] [ 11%] [32m[1mLinking C shared library libhal__rosidl_generator_c.so[0m
+[5.093s] [ 11%] Built target hal__rosidl_generator_c
+[5.114s] [ 12%] [32mBuilding CXX object CMakeFiles/hal_manipulator_node.dir/src/hal_manipulator_node.cpp.o[0m
+[51.614s] [ 13%] [32mBuilding CXX object CMakeFiles/hal_manipulator_node.dir/src/hal_manipulator_protocol.cpp.o[0m
+[52.362s] [ 14%] [32mBuilding CXX object CMakeFiles/hal_manipulator_node.dir/src/hal_manipulator_can.cpp.o[0m
+[52.922s] [ 15%] [32mBuilding CXX object CMakeFiles/hal_manipulator_node.dir/src/hal_manipulator_safety.cpp.o[0m
+[53.297s] [ 16%] [32m[1mLinking CXX executable hal_manipulator_node[0m
+[54.292s] [ 16%] Built target hal_manipulator_node
+[54.303s] [ 17%] [34m[1mGenerating C++ type support dispatch for ROS interfaces[0m
+[54.884s] [ 17%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/hal/msg/hal_tailservo_msg__type_support.cpp.o[0m
+[55.138s] [ 18%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/hal/msg/hal_wingservo_msg__type_support.cpp.o[0m
+[55.339s] [ 19%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/hal/msg/hal_mainthruster_msg__type_support.cpp.o[0m
+[55.553s] [ 20%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/hal/msg/hal_auxithruster_msg__type_support.cpp.o[0m
+[55.744s] [ 21%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/hal/srv/hal_servocontrol_srv__type_support.cpp.o[0m
+[55.934s] [ 22%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/hal/srv/hal_thrustercontrol_srv__type_support.cpp.o[0m
+[56.117s] [ 23%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/hal/msg/hal_battery_msg__type_support.cpp.o[0m
+[56.295s] [ 24%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/hal/srv/hal_battery_control_srv__type_support.cpp.o[0m
+[56.483s] [ 25%] [32m[1mLinking CXX shared library libhal__rosidl_typesupport_cpp.so[0m
+[56.522s] [ 25%] Built target hal__rosidl_typesupport_cpp
+[56.532s] [ 26%] [34m[1mGenerating C type support for eProsima Fast-RTPS[0m
+[57.110s] [ 27%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/hal/msg/detail/hal_tailservo_msg__type_support_c.cpp.o[0m
+[57.584s] [ 28%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/hal/msg/detail/hal_wingservo_msg__type_support_c.cpp.o[0m
+[57.824s] [ 29%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/hal/msg/detail/hal_mainthruster_msg__type_support_c.cpp.o[0m
+[58.061s] [ 30%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/hal/msg/detail/hal_auxithruster_msg__type_support_c.cpp.o[0m
+[58.307s] [ 31%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/hal/srv/detail/hal_servocontrol_srv__type_support_c.cpp.o[0m
+[58.695s] [ 32%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/hal/srv/detail/hal_thrustercontrol_srv__type_support_c.cpp.o[0m
+[58.945s] [ 33%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/hal/msg/detail/hal_battery_msg__type_support_c.cpp.o[0m
+[59.169s] [ 34%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/hal/srv/detail/hal_battery_control_srv__type_support_c.cpp.o[0m
+[59.419s] [ 35%] [32m[1mLinking CXX shared library libhal__rosidl_typesupport_fastrtps_c.so[0m
+[59.495s] [ 35%] Built target hal__rosidl_typesupport_fastrtps_c
+[59.509s] [ 36%] [34m[1mGenerating C++ type support for eProsima Fast-RTPS[0m
+[60.138s] [ 37%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/hal/msg/detail/dds_fastrtps/hal_tailservo_msg__type_support.cpp.o[0m
+[60.476s] [ 38%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/hal/msg/detail/dds_fastrtps/hal_wingservo_msg__type_support.cpp.o[0m
+[60.774s] [ 39%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/hal/msg/detail/dds_fastrtps/hal_mainthruster_msg__type_support.cpp.o[0m
+[61.066s] [ 40%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/hal/msg/detail/dds_fastrtps/hal_auxithruster_msg__type_support.cpp.o[0m
+[61.367s] [ 41%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/hal/srv/detail/dds_fastrtps/hal_servocontrol_srv__type_support.cpp.o[0m
+[61.652s] [ 42%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/hal/srv/detail/dds_fastrtps/hal_thrustercontrol_srv__type_support.cpp.o[0m
+[61.936s] [ 43%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/hal/msg/detail/dds_fastrtps/hal_battery_msg__type_support.cpp.o[0m
+[62.219s] [ 44%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/hal/srv/detail/dds_fastrtps/hal_battery_control_srv__type_support.cpp.o[0m
+[62.514s] [ 45%] [32m[1mLinking CXX shared library libhal__rosidl_typesupport_fastrtps_cpp.so[0m
+[62.586s] [ 45%] Built target hal__rosidl_typesupport_fastrtps_cpp
+[62.600s] [ 46%] [34m[1mGenerating C introspection for ROS interfaces[0m
+[63.192s] [ 47%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_tailservo_msg__type_support.c.o[0m
+[63.342s] [ 48%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_wingservo_msg__type_support.c.o[0m
+[63.382s] [ 48%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_mainthruster_msg__type_support.c.o[0m
+[63.414s] [ 49%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_auxithruster_msg__type_support.c.o[0m
+[63.462s] [ 50%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/srv/detail/hal_servocontrol_srv__type_support.c.o[0m
+[63.498s] [ 51%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/srv/detail/hal_thrustercontrol_srv__type_support.c.o[0m
+[63.533s] [ 52%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/msg/detail/hal_battery_msg__type_support.c.o[0m
+[63.568s] [ 53%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/hal/srv/detail/hal_battery_control_srv__type_support.c.o[0m
+[63.606s] [ 54%] [32m[1mLinking C shared library libhal__rosidl_typesupport_introspection_c.so[0m
+[63.646s] [ 54%] Built target hal__rosidl_typesupport_introspection_c
+[63.657s] [ 55%] [34m[1mGenerating C type support dispatch for ROS interfaces[0m
+[64.070s] [ 56%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_c.dir/rosidl_typesupport_c/hal/msg/hal_tailservo_msg__type_support.cpp.o[0m
+[64.099s] [ 57%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_c.dir/rosidl_typesupport_c/hal/msg/hal_wingservo_msg__type_support.cpp.o[0m
+[64.135s] [ 58%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_c.dir/rosidl_typesupport_c/hal/msg/hal_mainthruster_msg__type_support.cpp.o[0m
+[64.165s] [ 59%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_c.dir/rosidl_typesupport_c/hal/msg/hal_auxithruster_msg__type_support.cpp.o[0m
+[64.193s] [ 60%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_c.dir/rosidl_typesupport_c/hal/srv/hal_servocontrol_srv__type_support.cpp.o[0m
+[64.234s] [ 61%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_c.dir/rosidl_typesupport_c/hal/srv/hal_thrustercontrol_srv__type_support.cpp.o[0m
+[64.267s] [ 62%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_c.dir/rosidl_typesupport_c/hal/msg/hal_battery_msg__type_support.cpp.o[0m
+[64.296s] [ 63%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_c.dir/rosidl_typesupport_c/hal/srv/hal_battery_control_srv__type_support.cpp.o[0m
+[64.331s] [ 64%] [32m[1mLinking CXX shared library libhal__rosidl_typesupport_c.so[0m
+[64.378s] [ 64%] Built target hal__rosidl_typesupport_c
+[64.388s] [ 65%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[64.975s] [ 66%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/hal/msg/detail/hal_tailservo_msg__type_support.cpp.o[0m
+[65.324s] [ 67%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/hal/msg/detail/hal_wingservo_msg__type_support.cpp.o[0m
+[65.590s] [ 68%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/hal/msg/detail/hal_mainthruster_msg__type_support.cpp.o[0m
+[65.851s] [ 69%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/hal/msg/detail/hal_auxithruster_msg__type_support.cpp.o[0m
+[66.140s] [ 70%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/hal/srv/detail/hal_servocontrol_srv__type_support.cpp.o[0m
+[66.417s] [ 71%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/hal/srv/detail/hal_thrustercontrol_srv__type_support.cpp.o[0m
+[66.693s] [ 72%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/hal/msg/detail/hal_battery_msg__type_support.cpp.o[0m
+[66.956s] [ 73%] [32mBuilding CXX object CMakeFiles/hal__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/hal/srv/detail/hal_battery_control_srv__type_support.cpp.o[0m
+[67.217s] [ 74%] [32m[1mLinking CXX shared library libhal__rosidl_typesupport_introspection_cpp.so[0m
+[67.288s] [ 74%] Built target hal__rosidl_typesupport_introspection_cpp
+[67.881s] running egg_info
+[67.881s] creating hal.egg-info
+[67.881s] writing hal.egg-info/PKG-INFO
+[67.881s] writing dependency_links to hal.egg-info/dependency_links.txt
+[67.881s] writing top-level names to hal.egg-info/top_level.txt
+[67.881s] writing manifest file 'hal.egg-info/SOURCES.txt'
+[67.884s] reading manifest file 'hal.egg-info/SOURCES.txt'
+[67.884s] writing manifest file 'hal.egg-info/SOURCES.txt'
+[67.905s] [ 74%] Built target ament_cmake_python_build_hal_egg
+[67.926s] [ 75%] [32mBuilding CXX object CMakeFiles/hal_battery_node.dir/src/hal_battery_node.cpp.o[0m
+[72.822s] [ 76%] [32m[1mLinking CXX executable hal_battery_node[0m
+[73.038s] [ 76%] Built target hal_battery_node
+[73.057s] [ 77%] [32mBuilding CXX object CMakeFiles/hal_antennacontrol_node.dir/src/hal_antennacontrol_node.cpp.o[0m
+[75.059s] [01m[K/home/ss/uvms/uvms3_hal/src/hal_antennacontrol_node.cpp:[m[K In member function ‘[01m[Kvoid HalAntennaControlNode::run_motor(int)[m[K’:
+[75.062s] [01m[K/home/ss/uvms/uvms3_hal/src/hal_antennacontrol_node.cpp:110:24:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kdir[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[75.062s]   110 |     void run_motor([01;35m[Kint dir[m[K) { /* 许延轩：此处添加驱动代码 */ }
+[75.062s]       |                    [01;35m[K~~~~^~~[m[K
+[75.062s] [01m[K/home/ss/uvms/uvms3_hal/src/hal_antennacontrol_node.cpp:[m[K In member function ‘[01m[Kbool HalAntennaControlNode::read_limit_switch(int)[m[K’:
+[75.062s] [01m[K/home/ss/uvms/uvms3_hal/src/hal_antennacontrol_node.cpp:112:32:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kid[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[75.062s]   112 |     bool read_limit_switch([01;35m[Kint id[m[K) { return false; }
+[75.062s]       |                            [01;35m[K~~~~^~[m[K
+[79.669s] [ 78%] [32m[1mLinking CXX executable hal_antennacontrol_node[0m
+[80.025s] [ 78%] Built target hal_antennacontrol_node
+[80.050s] [ 79%] [32mBuilding CXX object CMakeFiles/hal_lightcontrol_node.dir/src/hal_lightcontrol_node.cpp.o[0m
+[86.242s] [ 80%] [32m[1mLinking CXX executable hal_lightcontrol_node[0m
+[86.563s] [ 80%] Built target hal_lightcontrol_node
+[86.585s] [ 81%] [32mBuilding CXX object CMakeFiles/hal_servo_node.dir/src/hal_servo_node.cpp.o[0m
+[94.639s] [ 82%] [32m[1mLinking CXX executable hal_servo_node[0m
+[95.030s] [ 82%] Built target hal_servo_node
+[95.050s] [ 83%] [32mBuilding CXX object CMakeFiles/hal_thruster_node.dir/src/hal_thruster_node.cpp.o[0m
+[102.353s] [ 84%] [32m[1mLinking CXX executable hal_thruster_node[0m
+[102.731s] [ 84%] Built target hal_thruster_node
+[102.753s] [ 84%] Built target hal
+[102.776s] [ 85%] [34m[1mGenerating Python code for ROS interfaces[0m
+[103.804s] [ 85%] Built target hal__py
+[103.826s] [ 86%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_py.dir/rosidl_generator_py/hal/msg/_hal_tailservo_msg_s.c.o[0m
+[104.184s] [ 87%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_py.dir/rosidl_generator_py/hal/msg/_hal_wingservo_msg_s.c.o[0m
+[104.284s] [ 88%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_py.dir/rosidl_generator_py/hal/msg/_hal_mainthruster_msg_s.c.o[0m
+[104.365s] [ 89%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_py.dir/rosidl_generator_py/hal/msg/_hal_auxithruster_msg_s.c.o[0m
+[104.452s] [ 90%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_py.dir/rosidl_generator_py/hal/srv/_hal_servocontrol_srv_s.c.o[0m
+[104.560s] [ 91%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_py.dir/rosidl_generator_py/hal/srv/_hal_thrustercontrol_srv_s.c.o[0m
+[104.650s] [ 92%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_py.dir/rosidl_generator_py/hal/msg/_hal_battery_msg_s.c.o[0m
+[104.756s] [ 93%] [32mBuilding C object CMakeFiles/hal__rosidl_generator_py.dir/rosidl_generator_py/hal/srv/_hal_battery_control_srv_s.c.o[0m
+[104.846s] [ 94%] [32m[1mLinking C shared library rosidl_generator_py/hal/libhal__rosidl_generator_py.so[0m
+[104.938s] [ 94%] Built target hal__rosidl_generator_py
+[104.974s] [ 95%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_fastrtps_c__pyext.dir/rosidl_generator_py/hal/_hal_s.ep.rosidl_typesupport_fastrtps_c.c.o[0m
+[105.145s] [ 96%] [32m[1mLinking C shared library rosidl_generator_py/hal/hal_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so[0m
+[105.187s] [ 96%] Built target hal__rosidl_typesupport_fastrtps_c__pyext
+[105.209s] [ 97%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_introspection_c__pyext.dir/rosidl_generator_py/hal/_hal_s.ep.rosidl_typesupport_introspection_c.c.o[0m
+[105.328s] [ 98%] [32m[1mLinking C shared library rosidl_generator_py/hal/hal_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so[0m
+[105.377s] [ 98%] Built target hal__rosidl_typesupport_introspection_c__pyext
+[105.398s] [ 99%] [32mBuilding C object CMakeFiles/hal__rosidl_typesupport_c__pyext.dir/rosidl_generator_py/hal/_hal_s.ep.rosidl_typesupport_c.c.o[0m
+[105.506s] [100%] [32m[1mLinking C shared library rosidl_generator_py/hal/hal_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so[0m
+[105.548s] [100%] Built target hal__rosidl_typesupport_c__pyext
+[105.562s] Invoked command in '/home/ss/uvms/uvms3_hal/build/hal' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ss/uvms/uvms3_hal/build/hal -- -j2 -l2
+[105.573s] Invoking command in '/home/ss/uvms/uvms3_hal/build/hal': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ss/uvms/uvms3_hal/build/hal
+[105.588s] -- Install configuration: ""
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/ament_index/resource_index/rosidl_interfaces/hal
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/hal_thrustercontrol_srv.h
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/hal_battery_control_srv.h
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/hal_servocontrol_srv.h
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__functions.h
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__functions.c
+[105.588s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__functions.h
+[105.589s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__functions.c
+[105.589s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__functions.h
+[105.589s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__type_support.h
+[105.590s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__functions.c
+[105.590s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__type_support.h
+[105.590s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__struct.h
+[105.590s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__struct.h
+[105.590s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__struct.h
+[105.590s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__type_support.h
+[105.590s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg
+[105.590s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_auxithruster_msg.h
+[105.590s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/rosidl_generator_c__visibility_control.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__struct.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__type_support.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__functions.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__struct.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__struct.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__functions.c
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__functions.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__functions.c
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__functions.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__struct.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__type_support.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__type_support.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__type_support.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__functions.c
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__type_support.h
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__functions.c
+[105.591s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__functions.h
+[105.592s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__functions.c
+[105.592s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__struct.h
+[105.592s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__functions.h
+[105.592s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_tailservo_msg.h
+[105.592s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_wingservo_msg.h
+[105.592s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_mainthruster_msg.h
+[105.592s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_battery_msg.h
+[105.592s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/environment/library_path.sh
+[105.592s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/environment/library_path.dsv
+[105.593s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_generator_c.so
+[105.593s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_generator_c.so" to ""
+[105.593s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal
+[105.593s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv
+[105.593s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail
+[105.593s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__rosidl_typesupport_fastrtps_c.h
+[105.593s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__rosidl_typesupport_fastrtps_c.h
+[105.593s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__rosidl_typesupport_fastrtps_c.h
+[105.593s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg
+[105.593s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail
+[105.593s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__rosidl_typesupport_fastrtps_c.h
+[105.594s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__rosidl_typesupport_fastrtps_c.h
+[105.594s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__rosidl_typesupport_fastrtps_c.h
+[105.594s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__rosidl_typesupport_fastrtps_c.h
+[105.594s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__rosidl_typesupport_fastrtps_c.h
+[105.594s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+[105.594s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_fastrtps_c.so
+[105.594s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_fastrtps_c.so" to ""
+[105.594s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal
+[105.594s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv
+[105.594s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/hal_battery_control_srv.hpp
+[105.594s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail
+[105.594s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__struct.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__type_support.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__type_support.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__type_support.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__builder.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__traits.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__builder.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__traits.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__builder.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__traits.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__struct.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__struct.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/hal_thrustercontrol_srv.hpp
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/hal_servocontrol_srv.hpp
+[105.595s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg
+[105.595s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_mainthruster_msg.hpp
+[105.596s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_wingservo_msg.hpp
+[105.596s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_tailservo_msg.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_battery_msg.hpp
+[105.597s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__traits.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__type_support.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__struct.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__struct.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__struct.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__type_support.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__builder.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__builder.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__builder.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__struct.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__builder.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__traits.hpp
+[105.597s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__traits.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__type_support.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__traits.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__struct.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__traits.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__builder.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__type_support.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__type_support.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/hal_auxithruster_msg.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/rosidl_generator_cpp__visibility_control.hpp
+[105.598s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal
+[105.598s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv
+[105.598s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__rosidl_typesupport_fastrtps_cpp.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__rosidl_typesupport_fastrtps_cpp.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__rosidl_typesupport_fastrtps_cpp.hpp
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/dds_fastrtps
+[105.598s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg
+[105.598s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail
+[105.598s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__rosidl_typesupport_fastrtps_cpp.hpp
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__rosidl_typesupport_fastrtps_cpp.hpp
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__rosidl_typesupport_fastrtps_cpp.hpp
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__rosidl_typesupport_fastrtps_cpp.hpp
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/dds_fastrtps
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__rosidl_typesupport_fastrtps_cpp.hpp
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_fastrtps_cpp.so
+[105.599s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_fastrtps_cpp.so" to ""
+[105.599s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal
+[105.599s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv
+[105.599s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__type_support.c
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__type_support.c
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__rosidl_typesupport_introspection_c.h
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__type_support.c
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__rosidl_typesupport_introspection_c.h
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__rosidl_typesupport_introspection_c.h
+[105.599s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg
+[105.599s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail
+[105.599s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__type_support.c
+[105.600s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__rosidl_typesupport_introspection_c.h
+[105.600s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__rosidl_typesupport_introspection_c.h
+[105.600s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__type_support.c
+[105.600s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__rosidl_typesupport_introspection_c.h
+[105.600s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__rosidl_typesupport_introspection_c.h
+[105.601s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__type_support.c
+[105.601s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__type_support.c
+[105.601s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__rosidl_typesupport_introspection_c.h
+[105.601s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__type_support.c
+[105.601s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/rosidl_typesupport_introspection_c__visibility_control.h
+[105.601s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_introspection_c.so
+[105.601s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_introspection_c.so" to ""
+[105.601s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_c.so
+[105.601s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_c.so" to ""
+[105.601s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal
+[105.602s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv
+[105.602s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__rosidl_typesupport_introspection_cpp.hpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__rosidl_typesupport_introspection_cpp.hpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_battery_control_srv__type_support.cpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__rosidl_typesupport_introspection_cpp.hpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_thrustercontrol_srv__type_support.cpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/srv/detail/hal_servocontrol_srv__type_support.cpp
+[105.602s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg
+[105.602s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__rosidl_typesupport_introspection_cpp.hpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__rosidl_typesupport_introspection_cpp.hpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__rosidl_typesupport_introspection_cpp.hpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__type_support.cpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_mainthruster_msg__rosidl_typesupport_introspection_cpp.hpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_battery_msg__type_support.cpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__type_support.cpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_wingservo_msg__type_support.cpp
+[105.602s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_auxithruster_msg__type_support.cpp
+[105.603s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include/hal/hal/msg/detail/hal_tailservo_msg__rosidl_typesupport_introspection_cpp.hpp
+[105.603s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_introspection_cpp.so
+[105.603s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_introspection_cpp.so" to ""
+[105.603s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_cpp.so
+[105.604s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_typesupport_cpp.so" to ""
+[105.604s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/environment/pythonpath.sh
+[105.604s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/environment/pythonpath.dsv
+[105.604s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal-0.0.1-py3.10.egg-info
+[105.604s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal-0.0.1-py3.10.egg-info/PKG-INFO
+[105.619s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal-0.0.1-py3.10.egg-info/SOURCES.txt
+[105.619s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal-0.0.1-py3.10.egg-info/top_level.txt
+[105.619s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal-0.0.1-py3.10.egg-info/dependency_links.txt
+[105.619s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal
+[105.619s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv
+[105.619s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/_hal_thrustercontrol_srv.py
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/_hal_servocontrol_srv_s.c
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/_hal_thrustercontrol_srv_s.c
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/_hal_battery_control_srv.py
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/_hal_servocontrol_srv.py
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/_hal_battery_control_srv_s.c
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/__init__.py
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/libhal__rosidl_generator_py.so
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/_hal_s.ep.rosidl_typesupport_c.c
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/_hal_s.ep.rosidl_typesupport_fastrtps_c.c
+[105.620s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/hal_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/hal_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/__init__.py
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/hal_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/_hal_s.ep.rosidl_typesupport_introspection_c.c
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_tailservo_msg.py
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_battery_msg_s.c
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_battery_msg.py
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_wingservo_msg.py
+[105.621s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_auxithruster_msg_s.c
+[105.622s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_mainthruster_msg_s.c
+[105.622s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_tailservo_msg_s.c
+[105.622s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_mainthruster_msg.py
+[105.632s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_wingservo_msg_s.c
+[105.633s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/__init__.py
+[105.633s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_auxithruster_msg.py
+[105.700s] Listing '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/__init__.py'...
+[105.700s] Listing '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/__init__.py'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_auxithruster_msg.py'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_battery_msg.py'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_mainthruster_msg.py'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_tailservo_msg.py'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/msg/_hal_wingservo_msg.py'...
+[105.700s] Listing '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/__init__.py'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/_hal_battery_control_srv.py'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/_hal_servocontrol_srv.py'...
+[105.700s] Compiling '/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/srv/_hal_thrustercontrol_srv.py'...
+[105.704s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/hal_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[105.704s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/hal_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so" to ""
+[105.704s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/hal_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[105.705s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/hal_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so" to ""
+[105.705s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/hal_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[105.705s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/local/lib/python3.10/dist-packages/hal/hal_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so" to ""
+[105.706s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_generator_py.so
+[105.706s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/libhal__rosidl_generator_py.so" to ""
+[105.706s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalTailservoMsg.idl
+[105.706s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalWingservoMsg.idl
+[105.706s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalMainthrusterMsg.idl
+[105.706s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalAuxithrusterMsg.idl
+[105.706s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalServocontrolSrv.idl
+[105.706s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalThrustercontrolSrv.idl
+[105.706s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalBatteryMsg.idl
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalBatteryControlSrv.idl
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalTailservoMsg.msg
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalWingservoMsg.msg
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalMainthrusterMsg.msg
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalAuxithrusterMsg.msg
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalServocontrolSrv.srv
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalServocontrolSrv_Request.msg
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalServocontrolSrv_Response.msg
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalThrustercontrolSrv.srv
+[105.707s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalThrustercontrolSrv_Request.msg
+[105.708s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalThrustercontrolSrv_Response.msg
+[105.708s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/msg/HalBatteryMsg.msg
+[105.708s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalBatteryControlSrv.srv
+[105.708s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalBatteryControlSrv_Request.msg
+[105.708s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/srv/HalBatteryControlSrv_Response.msg
+[105.708s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_battery_node
+[105.711s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_battery_node" to ""
+[105.711s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_antennacontrol_node
+[105.713s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_antennacontrol_node" to ""
+[105.713s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_lightcontrol_node
+[105.716s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_lightcontrol_node" to ""
+[105.716s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_servo_node
+[105.720s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_servo_node" to ""
+[105.720s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_thruster_node
+[105.726s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_thruster_node" to ""
+[105.727s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_manipulator_node
+[105.734s] -- Set runtime path of "/home/ss/uvms/uvms3_hal/install/hal/lib/hal/hal_manipulator_node" to ""
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal//launch
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal//launch/hal_manipulator.launch.py
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal//launch/power_hal.launch.py
+[105.735s] -- Up-to-date: /home/ss/uvms/uvms3_hal/install/hal/include/
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include//manipulator_hal
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include//manipulator_hal/can_driver.hpp
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include//manipulator_hal/safety_manager.hpp
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include//manipulator_hal/manipulator_lifecycle_node.hpp
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include//manipulator_hal/protocol_parser.hpp
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include//power_hal
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/include//power_hal/can_interface.hpp
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal//config
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal//config/left_arm.yaml
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal//config/right_arm.yaml
+[105.735s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/ament_index/resource_index/package_run_dependencies/hal
+[105.736s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/ament_index/resource_index/parent_prefix_path/hal
+[105.736s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/environment/ament_prefix_path.sh
+[105.746s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/environment/ament_prefix_path.dsv
+[105.747s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/environment/path.sh
+[105.747s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/environment/path.dsv
+[105.747s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/local_setup.bash
+[105.747s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/local_setup.sh
+[105.748s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/local_setup.zsh
+[105.748s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/local_setup.dsv
+[105.748s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/package.dsv
+[105.749s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/ament_index/resource_index/packages/hal
+[105.750s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/export_hal__rosidl_generator_cExport.cmake
+[105.750s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/export_hal__rosidl_generator_cExport-noconfig.cmake
+[105.750s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/export_hal__rosidl_typesupport_fastrtps_cExport.cmake
+[105.750s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/export_hal__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+[105.751s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/export_hal__rosidl_generator_cppExport.cmake
+[105.751s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/export_hal__rosidl_typesupport_fastrtps_cppExport.cmake
+[105.751s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/export_hal__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+[105.751s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/hal__rosidl_typesupport_introspection_cExport.cmake
+[105.752s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/hal__rosidl_typesupport_introspection_cExport-noconfig.cmake
+[105.752s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/hal__rosidl_typesupport_cExport.cmake
+[105.752s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/hal__rosidl_typesupport_cExport-noconfig.cmake
+[105.752s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/hal__rosidl_typesupport_introspection_cppExport.cmake
+[105.753s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/hal__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+[105.753s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/hal__rosidl_typesupport_cppExport.cmake
+[105.754s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/hal__rosidl_typesupport_cppExport-noconfig.cmake
+[105.754s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/export_hal__rosidl_generator_pyExport.cmake
+[105.754s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/export_hal__rosidl_generator_pyExport-noconfig.cmake
+[105.754s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/rosidl_cmake-extras.cmake
+[105.754s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/ament_cmake_export_dependencies-extras.cmake
+[105.754s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/ament_cmake_export_include_directories-extras.cmake
+[105.755s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/ament_cmake_export_libraries-extras.cmake
+[105.755s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/ament_cmake_export_targets-extras.cmake
+[105.755s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+[105.756s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+[105.757s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/halConfig.cmake
+[105.757s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/cmake/halConfig-version.cmake
+[105.757s] -- Installing: /home/ss/uvms/uvms3_hal/install/hal/share/hal/package.xml
+[105.761s] Invoked command in '/home/ss/uvms/uvms3_hal/build/hal' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ss/uvms/uvms3_hal/build/hal

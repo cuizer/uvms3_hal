@@ -1,0 +1,4 @@
+source;share/hal/local_setup.bash
+source;share/hal/local_setup.dsv
+source;share/hal/local_setup.sh
+source;share/hal/local_setup.zsh

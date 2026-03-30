@@ -1,0 +1,17 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from hal/srv/HalThrustercontrolSrv.srv
+// generated code does not contain a copyright notice
+
+
+module hal {
+  module srv {
+    struct HalThrustercontrolSrv_Request {
+      uint8 command;
+    };
+    struct HalThrustercontrolSrv_Response {
+      boolean success;
+
+      string message;
+    };
+  };
+};

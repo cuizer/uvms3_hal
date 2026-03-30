@@ -1,0 +1,13 @@
+{
+  "package_name": "hal",
+  "non_idl_tuples": [
+    "/home/ss/uvms/uvms3_hal:msg/HalTailservoMsg.msg",
+    "/home/ss/uvms/uvms3_hal:msg/HalWingservoMsg.msg",
+    "/home/ss/uvms/uvms3_hal:msg/HalMainthrusterMsg.msg",
+    "/home/ss/uvms/uvms3_hal:msg/HalAuxithrusterMsg.msg",
+    "/home/ss/uvms/uvms3_hal:srv/HalServocontrolSrv.srv",
+    "/home/ss/uvms/uvms3_hal:srv/HalThrustercontrolSrv.srv",
+    "/home/ss/uvms/uvms3_hal:msg/HalBatteryMsg.msg",
+    "/home/ss/uvms/uvms3_hal:srv/HalBatteryControlSrv.srv"
+  ]
+}

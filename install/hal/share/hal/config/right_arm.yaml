@@ -1,0 +1,24 @@
+/**:
+  ros__parameters:
+    arm_name: right_arm
+    can_interface: vcan1
+
+    base_frame: right_arm_base
+    ee_frame: right_gripper_link
+    debug_mode: true
+
+    publish_rate_hz: 50.0
+
+    joint_names:
+      - right_joint_1
+      - right_joint_2
+      - right_joint_3
+      - right_gripper_motor
+
+    joint.position_limit_min: [-3.14, -2.50, -2.50, 0.00]
+    joint.position_limit_max: [ 3.14,  2.50,  2.50, 1.00]
+    joint.max_velocity:       [ 1.50,  1.50,  1.50, 1.00]
+
+    safety.max_current: 500.0
+    safety.max_temperature: 100.0
+    safety.communication_timeout_sec: 0.2

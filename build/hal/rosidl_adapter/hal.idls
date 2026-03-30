@@ -1,0 +1,8 @@
+/home/ss/uvms/uvms3_hal/build/hal/rosidl_adapter/hal:msg/HalTailservoMsg.idl
+/home/ss/uvms/uvms3_hal/build/hal/rosidl_adapter/hal:msg/HalWingservoMsg.idl
+/home/ss/uvms/uvms3_hal/build/hal/rosidl_adapter/hal:msg/HalMainthrusterMsg.idl
+/home/ss/uvms/uvms3_hal/build/hal/rosidl_adapter/hal:msg/HalAuxithrusterMsg.idl
+/home/ss/uvms/uvms3_hal/build/hal/rosidl_adapter/hal:srv/HalServocontrolSrv.idl
+/home/ss/uvms/uvms3_hal/build/hal/rosidl_adapter/hal:srv/HalThrustercontrolSrv.idl
+/home/ss/uvms/uvms3_hal/build/hal/rosidl_adapter/hal:msg/HalBatteryMsg.idl
+/home/ss/uvms/uvms3_hal/build/hal/rosidl_adapter/hal:srv/HalBatteryControlSrv.idl

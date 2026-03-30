@@ -1,0 +1,25 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from hal/msg/HalAuxithrusterMsg.msg
+// generated code does not contain a copyright notice
+
+
+module hal {
+  module msg {
+    typedef int16 int16__6[6];
+    typedef uint16 uint16__6[6];
+    typedef uint8 uint8__6[6];
+    struct HalAuxithrusterMsg {
+      int16__6 rpm;
+
+      int16__6 current;
+
+      int16__6 voltage;
+
+      uint16__6 temp;
+
+      uint8__6 esc_status;
+
+      uint8__6 fault_status;
+    };
+  };
+};
