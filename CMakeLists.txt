@@ -18,6 +18,7 @@ find_package(lifecycle_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 
+
 # 2. 头文件目录
 include_directories(
   include
@@ -33,11 +34,17 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/HalThrustercontrolSrv.srv"
   "msg/HalBatteryMsg.msg"
   "srv/HalBatteryControlSrv.srv"
+  "msg/HalInertialnaviMsg.msg"
+  "msg/HalDvlMsg.msg"
+  "msg/HalDepthsensorMsg.msg"
   DEPENDENCIES std_msgs builtin_interfaces
 )
 
 # 获取生成的 C++ 接口目标
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+# 【核心修复1】定义动态生成的头文件路径（绝不能漏！）
+set(GEN_INCLUDE_DIR "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>")
 
 # 4. 各节点可执行文件
 
@@ -102,6 +109,33 @@ ament_target_dependencies(hal_manipulator_node
   trajectory_msgs
   lifecycle_msgs
 )
+#  编译水深传感器节点 (CAN)
+add_executable(hal_depthsensor_node src/hal_depthsensor_node.cpp)
+ament_target_dependencies(hal_depthsensor_node 
+  rclcpp 
+  rclcpp_lifecycle
+  std_msgs
+)
+
+
+
+# 编译 DVL 节点 
+add_executable(hal_dvl_node src/hal_dvl_node.cpp)
+ament_target_dependencies(hal_dvl_node 
+  rclcpp 
+  rclcpp_lifecycle 
+  std_msgs
+)
+
+
+# 编译惯导节点 
+add_executable(hal_inertialnavi_node src/hal_inertialnavi_node.cpp)
+ament_target_dependencies(hal_inertialnavi_node 
+  rclcpp 
+  rclcpp_lifecycle 
+  std_msgs
+)
+
 
 # 5. 链接自定义消息 typesupport
 target_link_libraries(hal_battery_node ${cpp_typesupport_target})
@@ -109,6 +143,9 @@ target_link_libraries(hal_antennacontrol_node ${cpp_typesupport_target})
 target_link_libraries(hal_lightcontrol_node ${cpp_typesupport_target})
 target_link_libraries(hal_servo_node ${cpp_typesupport_target})
 target_link_libraries(hal_thruster_node ${cpp_typesupport_target})
+target_link_libraries(hal_depthsensor_node  ${cpp_typesupport_target})
+target_link_libraries(hal_dvl_node ${cpp_typesupport_target})
+target_link_libraries(hal_inertialnavi_node ${cpp_typesupport_target})
 
 # 如果机械臂节点后续也需要使用本包自定义 msg/srv，可保留下面这行
 # target_link_libraries(hal_manipulator_node ${cpp_typesupport_target})
@@ -121,6 +158,9 @@ install(TARGETS
   hal_servo_node
   hal_thruster_node
   hal_manipulator_node
+  hal_depthsensor_node
+  hal_dvl_node
+  hal_inertialnavi_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
