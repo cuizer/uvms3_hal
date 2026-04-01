@@ -1,6 +1,0 @@
-setup.py
-hal/__init__.py
-hal.egg-info/PKG-INFO
-hal.egg-info/SOURCES.txt
-hal.egg-info/dependency_links.txt
-hal.egg-info/top_level.txt

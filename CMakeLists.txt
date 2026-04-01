@@ -93,11 +93,7 @@ ament_target_dependencies(hal_thruster_node
 
 # 机械臂节点
 add_executable(hal_manipulator_node
-  src/hal_manipulator_main.cpp
-  src/hal_manipulator_node.cpp
-  src/hal_manipulator_protocol.cpp
-  src/hal_manipulator_can.cpp
-  src/hal_manipulator_safety.cpp
+  src/hal_arm_node.cpp
 )
 ament_target_dependencies(hal_manipulator_node
   rclcpp
