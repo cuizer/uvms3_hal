@@ -260,26 +260,26 @@ void Task_250ms_Report(void) {
 
 ## ROS2消息和服务定义
 
-### HalBatteryMsg消息
+### HalBattery消息
 
 ```
 # 电池状态消息
-# 节点消息命名: hal_battery_msg
+# 节点消息命名: hal_battery
 # 消息命名: uvms_battery_data
 
-int8 battery_status      # 电池状态
+byte battery_status      # 电池状态
 int16 battery_current    # 电池电流 (0.1A)
 uint16 cycle_count       # 循环次数
 uint16 remain_capacity   # 剩余电量 (0.1AH)
 uint16 total_capacity    # 总电量 (0.1AH)
-uint8 switch_state       # 开关状态
+byte switch_state        # 开关状态: 0=关闭, 1=打开
 ```
 
 ### HalBatteryControlSrv服务
 
 ```
 # 电池控制服务
-# 节点消息命名: hal_batterycontrol_srv
+# 节点消息命名: hal_batterycontrol
 # 消息命名: uvms_batterycontrol_instruction
 
 # 请求部分
@@ -323,13 +323,13 @@ cansend can0 100#0A09010000000000
 
 ```bash
 # 启动节点（模拟模式）
-ros2 run power_hal hal_battery_node --ros-args -p simulation_mode:=true
+ros2 run hal hal_battery_node --ros-args -p simulation_mode:=true
 
 # 发送控制指令
-ros2 service call /hal/batterycontrol_srv power_hal/srv/HalBatteryControlSrv "{command: 1}"
+ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 1}"
 
 # 监听状态反馈
-ros2 topic echo /hal/battery_msg
+ros2 topic echo /hal/battery
 ```
 
 ## 注意事项
@@ -437,9 +437,9 @@ source install/setup.bash
 cd /home/epilogue/ros2\_ws
 rm -rf build/ install/ log/
 
-# 2. 编译power\_hal包
+# 2. 编译hal包
 
-colcon build --packages-select power\_hal
+colcon build --packages-select hal
 
 # 3. 设置编译后的环境
 
@@ -450,7 +450,7 @@ source install/setup.bash
 # 终端1：直接启动节点（模拟模式）
 
 source /home/epilogue/ros2\_ws/install/setup.bash
-ros2 run power\_hal hal\_battery\_node --ros-args -p simulation\_mode:=true
+ros2 run hal hal\_battery\_node --ros-args -p simulation\_mode:=true
 
 ## 第四步：配置和激活节点
 
@@ -482,7 +482,7 @@ source /home/epilogue/ros2\_ws/install/setup.bash
 
 # 打开12V电池
 
-ros2 service call /hal/batterycontrol\_srv power\_hal/srv/HalBatteryControlSrv "{command: 1}"
+ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 1}"
 
 # 等待2秒
 
@@ -490,7 +490,7 @@ sleep 2
 
 # 关闭12V电池
 
-ros2 service call /hal/batterycontrol\_srv power\_hal/srv/HalBatteryControlSrv "{command: 2}"
+ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 2}"
 
 # 等待2秒
 
@@ -498,7 +498,7 @@ sleep 2
 
 # 打开24V电池
 
-ros2 service call /hal/batterycontrol\_srv power\_hal/srv/HalBatteryControlSrv "{command: 3}"
+ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 3}"
 
 # 等待2秒
 
@@ -506,7 +506,7 @@ sleep 2
 
 # 关闭24V电池
 
-ros2 service call /hal/batterycontrol\_srv power\_hal/srv/HalBatteryControlSrv "{command: 4}"
+ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 4}"
 
 # 等待2秒
 
@@ -514,7 +514,7 @@ sleep 2
 
 # 打开72V电池
 
-ros2 service call /hal/batterycontrol\_srv power\_hal/srv/HalBatteryControlSrv "{command: 5}"
+ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 5}"
 
 # 等待2秒
 
@@ -522,7 +522,7 @@ sleep 2
 
 # 关闭72V电池
 
-ros2 service call /hal/batterycontrol\_srv power\_hal/srv/HalBatteryControlSrv "{command: 6}"
+ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 6}"
 
 # 等待2秒
 
@@ -536,7 +536,7 @@ source /home/epilogue/ros2\_ws/install/setup.bash
 
 # 监听电池状态消息
 
-ros2 topic echo /hal/battery\_msg
+ros2 topic echo /hal/battery
 
 ## 第七步：查看系统信息
 
@@ -554,16 +554,18 @@ ros2 topic list
 
 # 3. 查看话题详细信息
 
-ros2 topic info /hal/battery\_msg
+ros2 topic info /hal/battery
+
+ros2 topic echo /hal/battery
 
 # 4. 查看服务详细信息
 
-ros2 service info /hal/batterycontrol\_srv
+ros2 service info /hal/batterycontrol
 
 # 5. 查看消息类型定义
 
-ros2 interface show power\_hal/msg/HalBatteryMsg
-ros2 interface show power\_hal/srv/HalBatteryControlSrv
+ros2 interface show hal/msg/HalBattery
+ros2 interface show hal/srv/HalBatteryControlSrv
 
 # 6. 查看节点参数
 
@@ -583,7 +585,7 @@ ip link show can0
 # 3. 启动节点（真实模式）
 
 source /home/epilogue/ros2\_ws/install/setup.bash
-ros2 run power\_hal hal\_battery\_node --ros-args -p simulation\_mode:=false
+ros2 run hal hal\_battery\_node --ros-args -p simulation\_mode:=false
 
 # 4. 配置和激活节点
 
@@ -592,4 +594,4 @@ ros2 lifecycle set /hal\_battery\_node activate
 
 # 5. 测试控制指令
 
-ros2 service call /hal/batterycontrol\_srv power\_hal/srv/HalBatteryControlSrv "{command: 1}"
+ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 1}"

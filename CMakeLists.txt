@@ -31,7 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HalAuxithrusterMsg.msg"
   "srv/HalServocontrolSrv.srv"
   "srv/HalThrustercontrolSrv.srv"
-  "msg/HalBatteryMsg.msg"
+  "msg/HalBattery.msg"
   "srv/HalBatteryControlSrv.srv"
   DEPENDENCIES std_msgs builtin_interfaces
 )

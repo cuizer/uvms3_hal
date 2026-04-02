@@ -14,8 +14,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include "hal/msg/hal_battery_msg.hpp"
+#include "hal/msg/hal_battery.hpp"
 #include "hal/srv/hal_battery_control_srv.hpp"
+#include <chrono>
 
 #define COLOR_RESET   "\033[0m"
 #define COLOR_RED     "\033[31m"
@@ -30,25 +31,59 @@ namespace hal {
 
 // BMS数据结构
 struct BmsData {
-  float total_voltage;      // 总电压
-  float total_current;      // 总电流
-  float remain_capacity;    // 剩余容量
-  float full_capacity;      // 总容量
-  float soc;                // 荷电状态
-  uint16_t cycle_count;     // 循环次数
-  float max_cell_vol;       // 最高单体电压
-  uint8_t max_cell_id;      // 最高单体电压ID
-  float min_cell_vol;       // 最低单体电压
-  uint8_t min_cell_id;      // 最低单体电压ID
-  int8_t max_temp;          // 最高温度
-  int8_t min_temp;          // 最低温度
-  uint8_t cell_count;       // 单体数量
-  uint32_t protection_status; // 保护状态
-  bool mos_charge_state;    // 充电MOS状态
-  bool mos_discharge_state; // 放电MOS状态
-  int8_t temperatures[8];   // 温度数组
-  uint16_t cell_voltages[32]; // 单体电压数组
-  bool updated;             // 数据更新标志
+  // 48V电池数据
+  float total_voltage_48v;      // 总电压
+  float total_current_48v;      // 总电流
+  float remain_capacity_48v;    // 剩余容量
+  float full_capacity_48v;      // 总容量
+  float soc_48v;                // 荷电状态
+  uint16_t cycle_count_48v;     // 循环次数
+  float max_cell_vol_48v;       // 最高单体电压
+  uint8_t max_cell_id_48v;      // 最高单体电压ID
+  float min_cell_vol_48v;       // 最低单体电压
+  uint8_t min_cell_id_48v;      // 最低单体电压ID
+  int8_t max_temp_48v;          // 最高温度
+  int8_t min_temp_48v;          // 最低温度
+  uint8_t cell_count_48v;       // 单体数量
+  uint32_t protection_status_48v; // 保护状态
+  bool mos_charge_state_48v;    // 充电MOS状态
+  bool mos_discharge_state_48v; // 放电MOS状态
+  int8_t temperatures_48v[8];   // 温度数组
+  uint16_t cell_voltages_48v[32]; // 单体电压数组
+  
+  // 72V电池数据
+  float total_voltage_72v;      // 总电压
+  float total_current_72v;      // 总电流
+  float remain_capacity_72v;    // 剩余容量
+  float full_capacity_72v;      // 总容量
+  float soc_72v;                // 荷电状态
+  uint16_t cycle_count_72v;     // 循环次数
+  float max_cell_vol_72v;       // 最高单体电压
+  uint8_t max_cell_id_72v;      // 最高单体电压ID
+  float min_cell_vol_72v;       // 最低单体电压
+  uint8_t min_cell_id_72v;      // 最低单体电压ID
+  int8_t max_temp_72v;          // 最高温度
+  int8_t min_temp_72v;          // 最低温度
+  uint8_t cell_count_72v;       // 单体数量
+  uint32_t protection_status_72v; // 保护状态
+  bool mos_charge_state_72v;    // 充电MOS状态
+  bool mos_discharge_state_72v; // 放电MOS状态
+  int8_t temperatures_72v[8];   // 温度数组
+  uint16_t cell_voltages_72v[32]; // 单体电压数组
+  
+  // 12V和24V电池数据
+  uint16_t voltage_12v;         // 12V电池电压
+  uint16_t voltage_24v;         // 24V电池电压
+  uint8_t temperature_12v;      // 12V电池温度
+  uint8_t temperature_24v;      // 24V电池温度
+  
+  // 开关状态
+  bool switch_state_12v;        // 12V电池开关状态
+  bool switch_state_24v;        // 24V电池开关状态
+  bool switch_state_48v;        // 48V电池开关状态
+  bool switch_state_72v;        // 72V电池开关状态
+  
+  bool updated;                 // 数据更新标志
 };
 
 // 电池状态数据结构
@@ -59,8 +94,6 @@ enum class BatteryType {
 };
 
 struct BatteryStatusData {
-  float voltage;            // 电池电压
-  uint8_t switch_state;     // 开关状态
   BmsData bms_data;         // BMS数据
 };
 
@@ -220,14 +253,15 @@ bool CanInterface::receive_status(BatteryStatusData & status)
 
   uint32_t can_id = frame.can_id;
   
+  // 处理48V电池数据 (CAN ID 0x710-0x725)
   if (can_id >= 0x710 && can_id <= 0x718) {
     uint8_t group_idx = can_id - 0x710;
     uint8_t start_idx = group_idx * 4;
     if (start_idx + 3 < 32 && frame.can_dlc >= 8) {
-      status.bms_data.cell_voltages[start_idx] = (frame.data[0] << 8) | frame.data[1];
-      status.bms_data.cell_voltages[start_idx + 1] = (frame.data[2] << 8) | frame.data[3];
-      status.bms_data.cell_voltages[start_idx + 2] = (frame.data[4] << 8) | frame.data[5];
-      status.bms_data.cell_voltages[start_idx + 3] = (frame.data[6] << 8) | frame.data[7];
+      status.bms_data.cell_voltages_48v[start_idx] = (frame.data[0] << 8) | frame.data[1];
+      status.bms_data.cell_voltages_48v[start_idx + 1] = (frame.data[2] << 8) | frame.data[3];
+      status.bms_data.cell_voltages_48v[start_idx + 2] = (frame.data[4] << 8) | frame.data[5];
+      status.bms_data.cell_voltages_48v[start_idx + 3] = (frame.data[6] << 8) | frame.data[7];
       status.bms_data.updated = true;
       return false;
     }
@@ -236,11 +270,10 @@ bool CanInterface::receive_status(BatteryStatusData & status)
   switch (can_id) {
     case 0x719:
       if (frame.can_dlc >= 8) {
-        status.bms_data.total_voltage = ((frame.data[0] << 8) | frame.data[1]) * 0.1f;
-        status.bms_data.total_current = ((int16_t)((frame.data[2] << 8) | frame.data[3])) * 0.1f;
-        status.bms_data.remain_capacity = ((frame.data[4] << 8) | frame.data[5]) * 0.1f;
-        status.bms_data.full_capacity = ((frame.data[6] << 8) | frame.data[7]) * 0.1f;
-        status.voltage = status.bms_data.total_voltage;
+        status.bms_data.total_voltage_48v = ((frame.data[0] << 8) | frame.data[1]) * 0.1f;
+        status.bms_data.total_current_48v = ((int16_t)((frame.data[2] << 8) | frame.data[3])) * 0.1f;
+        status.bms_data.remain_capacity_48v = ((frame.data[4] << 8) | frame.data[5]) * 0.1f;
+        status.bms_data.full_capacity_48v = ((frame.data[6] << 8) | frame.data[7]) * 0.1f;
         status.bms_data.updated = true;
         return true;
       }
@@ -248,8 +281,8 @@ bool CanInterface::receive_status(BatteryStatusData & status)
       
     case 0x71A:
       if (frame.can_dlc >= 8) {
-        status.bms_data.soc = ((frame.data[0] << 8) | frame.data[1]) * 0.1f;
-        status.bms_data.cycle_count = (frame.data[4] << 8) | frame.data[5];
+        status.bms_data.soc_48v = ((frame.data[0] << 8) | frame.data[1]) * 0.1f;
+        status.bms_data.cycle_count_48v = (frame.data[4] << 8) | frame.data[5];
         status.bms_data.updated = true;
         return false;
       }
@@ -257,10 +290,10 @@ bool CanInterface::receive_status(BatteryStatusData & status)
       
     case 0x71B:
       if (frame.can_dlc >= 8) {
-        status.bms_data.max_cell_vol = ((frame.data[0] << 8) | frame.data[1]) * 0.001f;
-        status.bms_data.max_cell_id = frame.data[2];
-        status.bms_data.min_cell_vol = ((frame.data[3] << 8) | frame.data[4]) * 0.001f;
-        status.bms_data.min_cell_id = frame.data[5];
+        status.bms_data.max_cell_vol_48v = ((frame.data[0] << 8) | frame.data[1]) * 0.001f;
+        status.bms_data.max_cell_id_48v = frame.data[2];
+        status.bms_data.min_cell_vol_48v = ((frame.data[3] << 8) | frame.data[4]) * 0.001f;
+        status.bms_data.min_cell_id_48v = frame.data[5];
         status.bms_data.updated = true;
         return false;
       }
@@ -268,8 +301,8 @@ bool CanInterface::receive_status(BatteryStatusData & status)
       
     case 0x71C:
       if (frame.can_dlc >= 8) {
-        status.bms_data.max_temp = (int8_t)frame.data[0];
-        status.bms_data.min_temp = (int8_t)frame.data[4];
+        status.bms_data.max_temp_48v = (int8_t)frame.data[0];
+        status.bms_data.min_temp_48v = (int8_t)frame.data[4];
         status.bms_data.updated = true;
         return false;
       }
@@ -277,7 +310,7 @@ bool CanInterface::receive_status(BatteryStatusData & status)
       
     case 0x71E:
       if (frame.can_dlc >= 8) {
-        status.bms_data.cell_count = frame.data[3];
+        status.bms_data.cell_count_48v = frame.data[3];
         status.bms_data.updated = true;
         return false;
       }
@@ -285,11 +318,11 @@ bool CanInterface::receive_status(BatteryStatusData & status)
       
     case 0x723:
       if (frame.can_dlc >= 8) {
-        status.bms_data.protection_status = (frame.data[0] << 24) | (frame.data[1] << 16) | 
+        status.bms_data.protection_status_48v = (frame.data[0] << 24) | (frame.data[1] << 16) | 
                                             (frame.data[2] << 8) | frame.data[3];
-        status.bms_data.mos_charge_state = (frame.data[3] & 0x01) != 0;
-        status.bms_data.mos_discharge_state = (frame.data[3] & 0x02) != 0;
-        status.switch_state = status.bms_data.mos_discharge_state;
+        status.bms_data.mos_charge_state_48v = (frame.data[3] & 0x01) != 0;
+        status.bms_data.mos_discharge_state_48v = (frame.data[3] & 0x02) != 0;
+        status.bms_data.switch_state_48v = status.bms_data.mos_discharge_state_48v;
         status.bms_data.updated = true;
         return true;
       }
@@ -298,14 +331,62 @@ bool CanInterface::receive_status(BatteryStatusData & status)
     case 0x724:
       if (frame.can_dlc >= 8) {
         for(int i = 0; i < 8; i++) {
-          status.bms_data.temperatures[i] = (int8_t)frame.data[i];
+          status.bms_data.temperatures_48v[i] = (int8_t)frame.data[i];
         }
         status.bms_data.updated = true;
         return false;
       }
       break;
       
+    // 处理72V电池数据 (CAN ID 0x810-0x825)
+    case 0x819:
+      if (frame.can_dlc >= 8) {
+        status.bms_data.total_voltage_72v = ((frame.data[0] << 8) | frame.data[1]) * 0.1f;
+        status.bms_data.total_current_72v = ((int16_t)((frame.data[2] << 8) | frame.data[3])) * 0.1f;
+        status.bms_data.remain_capacity_72v = ((frame.data[4] << 8) | frame.data[5]) * 0.1f;
+        status.bms_data.full_capacity_72v = ((frame.data[6] << 8) | frame.data[7]) * 0.1f;
+        status.bms_data.updated = true;
+        return true;
+      }
+      break;
+      
+    case 0x81A:
+      if (frame.can_dlc >= 8) {
+        status.bms_data.soc_72v = ((frame.data[0] << 8) | frame.data[1]) * 0.1f;
+        status.bms_data.cycle_count_72v = (frame.data[4] << 8) | frame.data[5];
+        status.bms_data.updated = true;
+        return false;
+      }
+      break;
+      
+    case 0x823:
+      if (frame.can_dlc >= 8) {
+        status.bms_data.protection_status_72v = (frame.data[0] << 24) | (frame.data[1] << 16) | 
+                                            (frame.data[2] << 8) | frame.data[3];
+        status.bms_data.mos_charge_state_72v = (frame.data[3] & 0x01) != 0;
+        status.bms_data.mos_discharge_state_72v = (frame.data[3] & 0x02) != 0;
+        status.bms_data.switch_state_72v = status.bms_data.mos_discharge_state_72v;
+        status.bms_data.updated = true;
+        return true;
+      }
+      break;
+      
+    // 处理12V和24V电池数据 (CAN ID 0x900)
+    case 0x900:
+      if (frame.can_dlc >= 8) {
+        status.bms_data.voltage_12v = (frame.data[0] << 8) | frame.data[1];
+        status.bms_data.voltage_24v = (frame.data[2] << 8) | frame.data[3];
+        status.bms_data.temperature_12v = frame.data[4];
+        status.bms_data.temperature_24v = frame.data[5];
+        status.bms_data.switch_state_12v = (frame.data[6] & 0x01) != 0;
+        status.bms_data.switch_state_24v = (frame.data[6] & 0x02) != 0;
+        status.bms_data.updated = true;
+        return true;
+      }
+      break;
+      
     case 0x725:
+    case 0x825:
       status.bms_data.updated = true;
       return false;
       
@@ -324,13 +405,28 @@ public:
   explicit PowerHalNode(const std::string & node_name)
   : rclcpp_lifecycle::LifecycleNode(node_name),
     can_interface_("can0"),
-    simulation_mode_(false)
+    simulation_mode_(false),
+    safe_state_(false),
+    last_comm_time_(this->now())
   {
     this->declare_parameter("simulation_mode", false);
+    this->declare_parameter("voltage_threshold", 10.0);
+    this->declare_parameter("current_threshold", 100.0);
+    this->declare_parameter("temperature_threshold", 60.0);
+    this->declare_parameter("communication_timeout", 5.0);
+    
     simulation_mode_ = this->get_parameter("simulation_mode").as_bool();
+    voltage_threshold_ = this->get_parameter("voltage_threshold").as_double();
+    current_threshold_ = this->get_parameter("current_threshold").as_double();
+    temperature_threshold_ = this->get_parameter("temperature_threshold").as_double();
+    communication_timeout_ = this->get_parameter("communication_timeout").as_double();
     
     RCLCPP_INFO(this->get_logger(), "PowerHalNode constructor called");
     RCLCPP_INFO(this->get_logger(), "Simulation mode: %s", simulation_mode_ ? "ENABLED" : "DISABLED");
+    RCLCPP_INFO(this->get_logger(), "Voltage threshold: %.1fV", voltage_threshold_);
+    RCLCPP_INFO(this->get_logger(), "Current threshold: %.1fA", current_threshold_);
+    RCLCPP_INFO(this->get_logger(), "Temperature threshold: %.1fC", temperature_threshold_);
+    RCLCPP_INFO(this->get_logger(), "Communication timeout: %.1fs", communication_timeout_);
     
     // 初始化电池状态
     battery_states_[hal::BatteryType::BATTERY_12V] = false;
@@ -358,13 +454,13 @@ public:
       RCLCPP_INFO(this->get_logger(), "Running in simulation mode - CAN interface not initialized");
     }
     
-    // 创建电池状态发布者 (hal_battery_msg)
-    battery_pub_ = this->create_publisher<hal::msg::HalBatteryMsg>(
-      "/hal/battery_msg", 10);
+    // 创建电池状态发布者 (hal_battery)
+    battery_pub_ = this->create_publisher<hal::msg::HalBattery>(
+      "/hal/battery", 10);
     
-    // 创建电池控制服务 (hal_batterycontrol_srv)
+    // 创建电池控制服务 (hal_batterycontrol)
     battery_control_srv_ = this->create_service<hal::srv::HalBatteryControlSrv>(
-      "/hal/batterycontrol_srv",
+      "/hal/batterycontrol",
       std::bind(&PowerHalNode::on_battery_control_service, this, 
                 std::placeholders::_1, std::placeholders::_2));
     
@@ -449,25 +545,190 @@ private:
       // 实际模式下从CAN接口读取数据
       hal::BatteryStatusData status;
       while (can_interface_.receive_status(status)) {
-        // 处理从CAN接收到的数据并发布
+        // 更新通信时间戳
+        last_comm_time_ = this->now();
+        
+        // 检查电池异常
+        check_battery_anomalies(status);
+        
+        // 检查通信超时
+        check_communication_timeout();
+        
+        // 处理从CAN接收到的数据并发布（只处理48V电池状态）
         auto msg = create_battery_msg(status);
         battery_pub_->publish(msg);
         log_battery_status(msg);
       }
+      
+      // 定期检查通信超时
+      check_communication_timeout();
     }
   }
   
-  hal::msg::HalBatteryMsg create_battery_msg(const hal::BatteryStatusData& status)
+  void check_battery_anomalies(const hal::BatteryStatusData& status)
   {
-    auto msg = hal::msg::HalBatteryMsg();
+    // 检查48V电池电压异常
+    if (status.bms_data.total_voltage_48v < voltage_threshold_) {
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s48V电池电压过低: %.1fV (阈值: %.1fV)%s",
+                  COLOR_RED,
+                  status.bms_data.total_voltage_48v,
+                  voltage_threshold_,
+                  COLOR_RESET);
+      enter_safe_state("48V电池电压过低");
+    }
     
-    // 根据CAN数据填充消息
-    msg.battery_status = 0;  // 需要根据实际状态设置
-    msg.battery_current = static_cast<int16_t>(status.bms_data.total_current * 10);  // 转换为0.1A
-    msg.cycle_count = status.bms_data.cycle_count;
-    msg.remain_capacity = static_cast<uint16_t>(status.bms_data.remain_capacity * 10);  // 转换为0.1AH
-    msg.total_capacity = static_cast<uint16_t>(status.bms_data.full_capacity * 10);  // 转换为0.1AH
-    msg.switch_state = status.switch_state ? 1 : 0;
+    // 检查48V电池电流异常
+    if (std::abs(status.bms_data.total_current_48v) > current_threshold_) {
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s48V电池电流过大: %.1fA (阈值: %.1fA)%s",
+                  COLOR_RED,
+                  status.bms_data.total_current_48v,
+                  current_threshold_,
+                  COLOR_RESET);
+      enter_safe_state("48V电池电流过大");
+    }
+    
+    // 检查48V电池温度异常
+    if (status.bms_data.max_temp_48v > temperature_threshold_) {
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s48V电池温度过高: %d°C (阈值: %.1f°C)%s",
+                  COLOR_RED,
+                  status.bms_data.max_temp_48v,
+                  temperature_threshold_,
+                  COLOR_RESET);
+      enter_safe_state("48V电池温度过高");
+    }
+    
+    // 检查48V电池保护状态
+    if (status.bms_data.protection_status_48v != 0) {
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s48V电池保护状态触发: 0x%08X%s",
+                  COLOR_RED,
+                  status.bms_data.protection_status_48v,
+                  COLOR_RESET);
+      enter_safe_state("48V电池保护状态触发");
+    }
+    
+    // 检查72V电池电压异常
+    if (status.bms_data.total_voltage_72v > 0 && status.bms_data.total_voltage_72v < voltage_threshold_) {
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s72V电池电压过低: %.1fV (阈值: %.1fV)%s",
+                  COLOR_RED,
+                  status.bms_data.total_voltage_72v,
+                  voltage_threshold_,
+                  COLOR_RESET);
+      enter_safe_state("72V电池电压过低");
+    }
+    
+    // 检查72V电池电流异常
+    if (status.bms_data.total_current_72v != 0 && std::abs(status.bms_data.total_current_72v) > current_threshold_) {
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s72V电池电流过大: %.1fA (阈值: %.1fA)%s",
+                  COLOR_RED,
+                  status.bms_data.total_current_72v,
+                  current_threshold_,
+                  COLOR_RESET);
+      enter_safe_state("72V电池电流过大");
+    }
+    
+    // 检查72V电池温度异常
+    if (status.bms_data.max_temp_72v > temperature_threshold_) {
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s72V电池温度过高: %d°C (阈值: %.1f°C)%s",
+                  COLOR_RED,
+                  status.bms_data.max_temp_72v,
+                  temperature_threshold_,
+                  COLOR_RESET);
+      enter_safe_state("72V电池温度过高");
+    }
+    
+    // 检查72V电池保护状态
+    if (status.bms_data.protection_status_72v != 0) {
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s72V电池保护状态触发: 0x%08X%s",
+                  COLOR_RED,
+                  status.bms_data.protection_status_72v,
+                  COLOR_RESET);
+      enter_safe_state("72V电池保护状态触发");
+    }
+  }
+  
+  void check_communication_timeout()
+  {
+    auto now = this->now();
+    auto time_since_last_comm = now - last_comm_time_;
+    
+    if (time_since_last_comm.seconds() > communication_timeout_) {
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s通信超时: %.1fs (阈值: %.1fs)%s",
+                  COLOR_RED,
+                  time_since_last_comm.seconds(),
+                  communication_timeout_,
+                  COLOR_RESET);
+      enter_safe_state("通信超时");
+    }
+  }
+  
+  void enter_safe_state(const std::string& reason)
+  {
+    if (!safe_state_) {
+      safe_state_ = true;
+      RCLCPP_WARN(this->get_logger(), 
+                  "%s进入安全状态: %s%s",
+                  COLOR_YELLOW,
+                  reason.c_str(),
+                  COLOR_RESET);
+      
+      // 关闭所有电池
+      for (auto& [battery_type, state] : battery_states_) {
+        if (state) {
+          control_battery(battery_type, false, get_battery_name(battery_type));
+        }
+      }
+    }
+  }
+  
+  void exit_safe_state()
+  {
+    if (safe_state_) {
+      safe_state_ = false;
+      RCLCPP_INFO(this->get_logger(), 
+                  "%s退出安全状态%s",
+                  COLOR_GREEN,
+                  COLOR_RESET);
+    }
+  }
+  
+  hal::msg::HalBattery create_battery_msg(const hal::BatteryStatusData& status)
+  {
+    auto msg = hal::msg::HalBattery();
+    
+    // 设置时间戳
+    msg.timestamp = this->now().nanoseconds() / 1000000;  // 转换为毫秒
+    
+    // 填充48V电池数据
+    msg.battery_status_48v = status.bms_data.protection_status_48v != 0 ? 1 : 0;
+    msg.battery_voltage_48v = static_cast<uint16_t>(status.bms_data.total_voltage_48v * 10);  // 转换为0.1V
+    msg.battery_current_48v = static_cast<int16_t>(status.bms_data.total_current_48v * 10);  // 转换为0.1A
+    msg.cycle_count_48v = status.bms_data.cycle_count_48v;
+    msg.battery_temperature_48v = static_cast<uint16_t>(status.bms_data.max_temp_48v);
+    msg.remain_capacity_48v = static_cast<uint16_t>(status.bms_data.remain_capacity_48v * 10);  // 转换为0.1AH
+    msg.total_capacity_48v = static_cast<uint16_t>(status.bms_data.full_capacity_48v * 10);  // 转换为0.1AH
+    
+    // 填充72V电池数据
+    msg.battery_status_72v = status.bms_data.protection_status_72v != 0 ? 1 : 0;
+    msg.battery_voltage_72v = static_cast<uint16_t>(status.bms_data.total_voltage_72v * 10);  // 转换为0.1V
+    msg.battery_current_72v = static_cast<int16_t>(status.bms_data.total_current_72v * 10);  // 转换为0.1A
+    msg.cycle_count_72v = status.bms_data.cycle_count_72v;
+    msg.battery_temperature_72v = static_cast<uint16_t>(status.bms_data.max_temp_72v);
+    msg.remain_capacity_72v = static_cast<uint16_t>(status.bms_data.remain_capacity_72v * 10);  // 转换为0.1AH
+    msg.total_capacity_72v = static_cast<uint16_t>(status.bms_data.full_capacity_72v * 10);  // 转换为0.1AH
+    
+    // 填充开关状态
+    msg.switch_state_12v = status.bms_data.switch_state_12v ? 1 : 0;
+    msg.switch_state_24v = status.bms_data.switch_state_24v ? 1 : 0;
+    msg.switch_state_72v = status.bms_data.switch_state_72v ? 1 : 0;
     
     return msg;
   }
@@ -480,51 +741,91 @@ private:
     // 每10个周期发布一次状态
     if (counter % 10 != 0) return;
     
+    // 显示各电池的开关状态
+    RCLCPP_INFO(this->get_logger(), "%s[模拟模式]电池开关状态:%s", COLOR_CYAN, COLOR_RESET);
     for (const auto& [battery_type, switch_state] : battery_states_) {
-      auto msg = hal::msg::HalBatteryMsg();
-      auto& data = battery_data_[battery_type];
-      
-      msg.battery_status = switch_state ? 1 : 0;
-      msg.battery_current = switch_state ? static_cast<int16_t>(50) : 0;  // 5.0A = 50 * 0.1A
-      msg.cycle_count = data.cycle_count;
-      msg.remain_capacity = switch_state ? static_cast<uint16_t>(data.total_capacity * 0.85) : 0;  // 85%电量
-      msg.total_capacity = data.total_capacity;
-      msg.switch_state = switch_state ? 1 : 0;
-      
-      battery_pub_->publish(msg);
-      
       std::string color = switch_state ? COLOR_GREEN : COLOR_RED;
       std::string state_str = switch_state ? "开启" : "关闭";
-      
       RCLCPP_INFO(this->get_logger(), 
-          "%s[模拟模式]【%s】%s%s 电流:%.1fA 电量:%.1f/%.1fAH 循环:%d%s",
+          "%s  %s: %s%s",
           color.c_str(),
           get_battery_name(battery_type).c_str(),
           state_str.c_str(),
-          COLOR_RESET,
-          msg.battery_current / 10.0,
-          msg.remain_capacity / 10.0,
-          msg.total_capacity / 10.0,
-          msg.cycle_count,
           COLOR_RESET);
     }
+    
+    // 发布电池状态信息
+    auto msg = hal::msg::HalBattery();
+    
+    // 设置时间戳
+    msg.timestamp = this->now().nanoseconds() / 1000000;  // 转换为毫秒
+    
+    // 填充48V电池数据
+    msg.battery_status_48v = 0;  // 正常状态
+    msg.battery_voltage_48v = 480;  // 48.0V
+    msg.battery_current_48v = 50;  // 5.0A
+    msg.cycle_count_48v = 100;  // 循环次数
+    msg.battery_temperature_48v = 25;  // 25℃
+    msg.remain_capacity_48v = 8500;  // 850.0AH
+    msg.total_capacity_48v = 10000;  // 1000.0AH
+    
+    // 填充72V电池数据
+    msg.battery_status_72v = 0;  // 正常状态
+    msg.battery_voltage_72v = 720;  // 72.0V
+    msg.battery_current_72v = 30;  // 3.0A
+    msg.cycle_count_72v = 50;  // 循环次数
+    msg.battery_temperature_72v = 28;  // 28℃
+    msg.remain_capacity_72v = 17000;  // 1700.0AH
+    msg.total_capacity_72v = 20000;  // 2000.0AH
+    
+    // 填充开关状态
+    msg.switch_state_12v = battery_states_[hal::BatteryType::BATTERY_12V] ? 1 : 0;
+    msg.switch_state_24v = battery_states_[hal::BatteryType::BATTERY_24V] ? 1 : 0;
+    msg.switch_state_72v = battery_states_[hal::BatteryType::BATTERY_72V] ? 1 : 0;
+    
+    battery_pub_->publish(msg);
+    
+    // 显示电池状态信息
+    RCLCPP_INFO(this->get_logger(), "%s[模拟模式]电池状态信息:%s", COLOR_CYAN, COLOR_RESET);
+    RCLCPP_INFO(this->get_logger(), "  时间戳: %ld ms", msg.timestamp);
+    RCLCPP_INFO(this->get_logger(), "  48V: 状态=%s 电压=%.1fV 电流=%.1fA 循环=%d 温度=%d℃ 电量=%.1f/%.1fAH", 
+        msg.battery_status_48v ? "异常" : "正常",
+        msg.battery_voltage_48v / 10.0, 
+        msg.battery_current_48v / 10.0, 
+        msg.cycle_count_48v,
+        msg.battery_temperature_48v, 
+        msg.remain_capacity_48v / 10.0, 
+        msg.total_capacity_48v / 10.0);
+    RCLCPP_INFO(this->get_logger(), "  72V: 状态=%s 电压=%.1fV 电流=%.1fA 循环=%d 温度=%d℃ 电量=%.1f/%.1fAH", 
+        msg.battery_status_72v ? "异常" : "正常",
+        msg.battery_voltage_72v / 10.0, 
+        msg.battery_current_72v / 10.0, 
+        msg.cycle_count_72v,
+        msg.battery_temperature_72v, 
+        msg.remain_capacity_72v / 10.0, 
+        msg.total_capacity_72v / 10.0);
   }
   
-  void log_battery_status(const hal::msg::HalBatteryMsg& msg)
+  void log_battery_status(const hal::msg::HalBattery& msg)
   {
-    std::string color = msg.switch_state ? COLOR_GREEN : COLOR_RED;
-    std::string state_str = msg.switch_state ? "开启" : "关闭";
-    
-    RCLCPP_INFO(this->get_logger(), 
-        "%s【电池】%s%s 电流:%.1fA 电量:%.1f/%.1fAH 循环:%d%s",
-        color.c_str(),
-        state_str.c_str(),
-        COLOR_RESET,
-        msg.battery_current / 10.0,
-        msg.remain_capacity / 10.0,
-        msg.total_capacity / 10.0,
-        msg.cycle_count,
-        COLOR_RESET);
+    RCLCPP_INFO(this->get_logger(), "%s电池状态信息:%s", COLOR_CYAN, COLOR_RESET);
+    RCLCPP_INFO(this->get_logger(), "  时间戳: %ld ms", msg.timestamp);
+    RCLCPP_INFO(this->get_logger(), "  48V: 状态=%s 电压=%.1fV 电流=%.1fA 循环=%d 温度=%d℃ 电量=%.1f/%.1fAH", 
+        msg.battery_status_48v ? "异常" : "正常",
+        msg.battery_voltage_48v / 10.0, 
+        msg.battery_current_48v / 10.0, 
+        msg.cycle_count_48v,
+        msg.battery_temperature_48v, 
+        msg.remain_capacity_48v / 10.0, 
+        msg.total_capacity_48v / 10.0);
+    RCLCPP_INFO(this->get_logger(), "  72V: 状态=%s 电压=%.1fV 电流=%.1fA 循环=%d 温度=%d℃ 电量=%.1f/%.1fAH", 
+        msg.battery_status_72v ? "异常" : "正常",
+        msg.battery_voltage_72v / 10.0, 
+        msg.battery_current_72v / 10.0, 
+        msg.cycle_count_72v,
+        msg.battery_temperature_72v, 
+        msg.remain_capacity_72v / 10.0, 
+        msg.total_capacity_72v / 10.0);
   }
   
   void on_battery_control_service(
@@ -532,6 +833,24 @@ private:
     std::shared_ptr<hal::srv::HalBatteryControlSrv::Response> response) 
   {
     RCLCPP_INFO(this->get_logger(), "收到电池控制服务请求: command=%d", request->command);
+    
+    // 检查安全状态
+    if (safe_state_) {
+      response->success = false;
+      response->message = "系统处于安全状态，无法执行控制指令";
+      RCLCPP_WARN(this->get_logger(), "%s安全状态下拒绝控制指令: %d%s", 
+                  COLOR_YELLOW, request->command, COLOR_RESET);
+      return;
+    }
+    
+    // 检查急停指令
+    if (request->command == 99) { // 急停指令
+      RCLCPP_INFO(this->get_logger(), "%s执行急停指令%s", COLOR_RED, COLOR_RESET);
+      enter_safe_state("急停指令");
+      response->success = true;
+      response->message = "急停指令执行成功";
+      return;
+    }
     
     bool success = false;
     std::string message = "";
@@ -567,6 +886,12 @@ private:
         message = success ? "72V电池已关闭" : "72V电池关闭失败";
         break;
         
+      case 98: // 退出安全状态
+        exit_safe_state();
+        response->success = true;
+        response->message = "已退出安全状态";
+        return;
+        
       default:
         success = false;
         message = "无效的控制命令";
@@ -584,6 +909,19 @@ private:
   {
     if (simulation_mode_) {
       battery_states_[battery_type] = turn_on;
+      // 更新BmsData中的开关状态
+      switch (battery_type) {
+        case hal::BatteryType::BATTERY_12V:
+          bms_data_.switch_state_12v = turn_on;
+          break;
+        case hal::BatteryType::BATTERY_24V:
+          bms_data_.switch_state_24v = turn_on;
+          break;
+        case hal::BatteryType::BATTERY_72V:
+          bms_data_.switch_state_72v = turn_on;
+          bms_data_.switch_state_48v = turn_on;  // 48V开关状态跟随72V
+          break;
+      }
       RCLCPP_INFO(this->get_logger(), 
                    "[模拟模式] 控制指令执行: 【%s】-> %s",
                    name.c_str(),
@@ -596,6 +934,19 @@ private:
       
       if (can_interface_.send_control_command(control)) {
         battery_states_[battery_type] = turn_on;
+        // 更新BmsData中的开关状态
+        switch (battery_type) {
+          case hal::BatteryType::BATTERY_12V:
+            bms_data_.switch_state_12v = turn_on;
+            break;
+          case hal::BatteryType::BATTERY_24V:
+            bms_data_.switch_state_24v = turn_on;
+            break;
+          case hal::BatteryType::BATTERY_72V:
+            bms_data_.switch_state_72v = turn_on;
+            bms_data_.switch_state_48v = turn_on;  // 48V开关状态跟随72V
+            break;
+        }
         RCLCPP_INFO(this->get_logger(), 
                    "控制指令执行: 【%s】-> %s",
                    name.c_str(),
@@ -620,12 +971,19 @@ private:
   }
   
   rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::Publisher<hal::msg::HalBatteryMsg>::SharedPtr battery_pub_;
+  rclcpp::Publisher<hal::msg::HalBattery>::SharedPtr battery_pub_;
   rclcpp::Service<hal::srv::HalBatteryControlSrv>::SharedPtr battery_control_srv_;
   hal::CanInterface can_interface_;
   std::map<hal::BatteryType, bool> battery_states_;
   std::map<hal::BatteryType, BatteryData> battery_data_;
+  hal::BmsData bms_data_;       // 电池状态数据
   bool simulation_mode_;
+  bool safe_state_;            // 安全状态标志
+  rclcpp::Time last_comm_time_; // 最后通信时间戳
+  double voltage_threshold_;    // 电压阈值
+  double current_threshold_;    // 电流阈值
+  double temperature_threshold_; // 温度阈值
+  double communication_timeout_; // 通信超时时间
 };
 
 int main(int argc, char ** argv)
