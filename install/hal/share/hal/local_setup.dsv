@@ -1,4 +1,0 @@
-source;share/hal/environment/ament_prefix_path.sh
-source;share/hal/environment/library_path.sh
-source;share/hal/environment/path.sh
-source;share/hal/environment/pythonpath.sh
