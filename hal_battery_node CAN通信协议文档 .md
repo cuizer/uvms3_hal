@@ -451,6 +451,8 @@ source install/setup.bash
 
 source /home/epilogue/ros2\_ws/install/setup.bash
 ros2 run hal hal\_battery\_node --ros-args -p simulation\_mode:=true
+ros2 run hal hal_battery_node --ros-args -p simulation_mode:=false
+
 
 ## 第四步：配置和激活节点
 
