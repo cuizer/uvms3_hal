@@ -89,6 +89,7 @@ ament_target_dependencies(hal_thruster_node
   rclcpp
   rclcpp_lifecycle
   std_msgs
+  std_srvs
 )
 
 # 机械臂节点
