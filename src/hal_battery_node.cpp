@@ -1,5 +1,6 @@
 #include <memory>
 #include <string>
+#include <cstring>  // <--- 新增这一行！
 #include <map>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>

@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-
+#include <cstring>  // <--- 新增这一行！
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/can.h>
@@ -407,7 +407,8 @@ bool CanDriver::write_frame(const CanFrame& frame)
 
     struct can_frame raw_frame {};
     raw_frame.can_id = frame.can_id;
-    raw_frame.len = frame.dlc;
+    // 将 raw_frame.len = frame.dlc; 修改为：
+    raw_frame.can_dlc = frame.dlc;
 
     for (uint8_t i = 0; i < frame.dlc && i < 8; ++i) {
         raw_frame.data[i] = frame.data[i];
@@ -450,7 +451,8 @@ bool CanDriver::read_frame(CanFrame& frame)
     }
 
     frame.can_id = raw_frame.can_id & CAN_EFF_MASK;
-    frame.dlc = raw_frame.len;
+    // 将 frame.dlc = raw_frame.len; 修改为：
+    frame.dlc = raw_frame.can_dlc;
     frame.data.fill(0);
 
     for (uint8_t i = 0; i < frame.dlc && i < 8; ++i) {

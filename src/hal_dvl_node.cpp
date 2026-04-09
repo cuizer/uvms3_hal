@@ -8,7 +8,7 @@
 #include <string>
 #include <sstream> 
 #include <vector>
-
+#include <cstring>  // <--- 新增这一行！
 // 引入 Linux 底层串口所需的系统头文件
 #include <fcntl.h>
 #include <termios.h>

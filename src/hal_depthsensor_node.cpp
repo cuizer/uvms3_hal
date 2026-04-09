@@ -2,7 +2,7 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "hal/msg/hal_depthsensor_msg.hpp" 
 #include <cmath> 
-
+#include <cstring>  // <--- 新增这一行！
 #include <cmath>
 #include <net/if.h>
 #include <sys/ioctl.h>

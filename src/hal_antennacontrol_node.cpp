@@ -1,7 +1,7 @@
 #include <memory>
 #include <string>
 #include <chrono>
-
+#include <cstring>  // <--- 新增这一行！
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "std_msgs/msg/byte.hpp"

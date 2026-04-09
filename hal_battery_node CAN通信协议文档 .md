@@ -460,6 +460,8 @@ ros2 run hal hal_battery_node --ros-args -p simulation_mode:=false
 
 source /home/epilogue/ros2\_ws/install/setup.bash
 
+source /home/nvidia/test_ws/install/setup.bash
+
 # 1. 查看节点状态
 
 ros2 lifecycle get /hal\_battery\_node
