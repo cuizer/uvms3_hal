@@ -453,7 +453,7 @@ source /home/epilogue/ros2\_ws/install/setup.bash
 ros2 run hal hal\_battery\_node --ros-args -p simulation\_mode:=true
 ros2 run hal hal_battery_node --ros-args -p simulation_mode:=false
 
-
+ros2 run hal hal_battery_node --ros-args -p voltage_threshold:=-1.0 -p communication_timeout:=999999.0 -p simulation_mode:=false
 ## 第四步：配置和激活节点
 
 # 终端2：打开新终端
@@ -588,7 +588,7 @@ ip link show can0
 
 # 3. 启动节点（真实模式）
 
-source /home/epilogue/ros2\_ws/install/setup.bash
+source install/setup.bash
 ros2 run hal hal\_battery\_node --ros-args -p simulation\_mode:=false
 
 # 4. 配置和激活节点
