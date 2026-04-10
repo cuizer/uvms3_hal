@@ -210,14 +210,14 @@ private:
         // 🚨 新增：用一个数组装载需要测试的 Node ID
         std::vector<uint32_t> test_nodes;
         if (is_main_thruster) {
-            test_nodes.push_back(0x0B); // 主推 ID 为 0x0B
+        // 修正：使用常量，真实 ID 为 1
+        test_nodes.push_back(MAIN_THRUSTER_ID); 
         } else {
-            // 辅推有 6 个，假设 ID 分别是 0x01 到 0x06
-            for (uint32_t i = 1; i <= 6; ++i) {
-                test_nodes.push_back(i);
-            }
+        // ⚠️ 辅推暂不测试，协议不对，直接返回
+        RCLCPP_WARN(get_logger(), "辅推 CAN 协议未适配，跳过辅推测试！");
+        is_testing_ = false;
+        return;
         }
-        
         // 🚨 增强：测试序列执行前检查急停
         if (is_estopped_) { is_testing_ = false; return; }
         
@@ -256,15 +256,17 @@ private:
         if (is_testing_) return; 
 
 
-        if (msg->data.size() >= 7) {
-            // 假设主推 ID 是 0x0B
-            set_thruster_rpm_hardware(0x0B, msg->data[0]);  
-            
-            // 假设 6 个辅推的 ID 分别是 0x01 到 0x06
-            for (int i = 1; i < 7; ++i) {
-                set_thruster_rpm_hardware(i, msg->data[i]);
-            }
+        if (msg->data.size() >= 1) { // 至少保证有主推的数据
+        // 修正：使用真实 ID 发送
+        set_thruster_rpm_hardware(MAIN_THRUSTER_ID, msg->data[0]);  
+        
+        // ⚠️ 屏蔽辅推发送逻辑，避免污染总线和干扰主推
+        /*
+        for (int i = 1; i < 7; ++i) {
+            set_thruster_rpm_hardware(i, msg->data[i]);
         }
+        */
+    }
     }
 
 
@@ -305,15 +307,20 @@ private:
 
     void stop_all_thrusters() {
         RCLCPP_WARN(get_logger(), "正在向底层硬件下发全推进器停机指令！");
+    // 修正：使用真实 ID 停机
+        set_thruster_rpm_hardware(MAIN_THRUSTER_ID, 0.0); 
+    
+    // ⚠️ 辅推停机逻辑暂时注释
+
+
+        RCLCPP_WARN(get_logger(), "正在向底层硬件下发全推进器停机指令！");
         
-        // 发送主推停止指令
-        set_thruster_rpm_hardware(0x0B, 0.0); // 停止主推 (ID: 0x0B)
-        
+                
         // 未来完善了辅推的 Node ID 逻辑后，这里也要循环发送辅推的停止指令
         // 例如：
-        for (int i = 1; i <= 6; ++i) {
-             set_thruster_rpm_hardware(i, 0.0); // 停止辅推 (ID: 0x01 到 0x06)
-        }
+        //for (int i = 1; i <= 6; ++i) {
+        //     set_thruster_rpm_hardware(i, 0.0); // 停止辅推 (ID: 0x01 到 0x06)
+        //}
     }
     
     // 🚨 实现 CAN 发送函数
