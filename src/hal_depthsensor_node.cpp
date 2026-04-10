@@ -1,17 +1,19 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "hal/msg/hal_depthsensor_msg.hpp" 
+#include <std_msgs/msg/string.hpp>   // 【新增】用于发布连接状态
 #include <cmath> 
 #include <algorithm> // 包含 std::max
+#include <atomic>    // 包含 std::atomic
 
 // 引入 Linux 底层网络与 SocketCAN 系统头文件
+#include <cstring>
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <unistd.h>
-#include <string.h>
 #include <fcntl.h>
 #include <sys/select.h>
 #include <thread>
@@ -80,9 +82,16 @@ public:
         RCLCPP_INFO(get_logger(), "配置中... 初始化水深传感器发布者 (固定 50Hz)。");
         depth_pub_ = this->create_publisher<hal::msg::HalDepthsensorMsg>("hal_depthsensor_msg", 10);
         
+        // 【新增】初始化状态发布者
+        status_pub_ = this->create_publisher<std_msgs::msg::String>("hal_depthsensor_status", 10);
+        
         // 创建 50Hz (20ms) 定时器，专门负责数据发布
         publish_timer_ = this->create_wall_timer(
             20ms, std::bind(&HalDepthSensorNode::publish_timer_callback, this));
+
+        // 创建 1Hz 看门狗定时器，专门负责监控传感器掉线重连
+        watchdog_timer_ = this->create_wall_timer(
+            1s, std::bind(&HalDepthSensorNode::watchdog_callback, this));
 
         return CallbackReturn::SUCCESS;
     }
@@ -96,29 +105,22 @@ public:
             return CallbackReturn::FAILURE;
         }
 
-        // 【关键新增】发送 CANOpen NMT 启动指令，唤醒总线上所有水深传感器
-        struct can_frame start_frame;
-        start_frame.can_id = 0x000; // NMT 广播 ID
-        start_frame.can_dlc = 8;
-        std::memset(start_frame.data, 0, 8);
-        start_frame.data[0] = 0x01; // 0x01 代表“启动”节点通信
-        start_frame.data[1] = 0x00; // 0x00 代表广播给所有节点
-        
-        // 发送唤醒指令
-        if (write(can_socket_, &start_frame, sizeof(start_frame)) < 0) {
-            RCLCPP_WARN(this->get_logger(), "发送传感器唤醒指令失败，请检查 CAN 连接状态");
-        } else {
-            RCLCPP_INFO(this->get_logger(), "已成功发送水深传感器唤醒指令 (NMT Start)");
-        }
+        // 发送 CANOpen NMT 启动指令，唤醒总线上所有水深传感器
+        send_nmt_wakeup();
 
         depth_pub_->on_activate();
+        status_pub_->on_activate(); // 【新增】激活状态发布者
+        
         is_running_ = true;
+        is_connected_ = false; // 初始设定为断开，等待接收到第一帧数据后触发连接发布
         can_thread_ = std::thread(&HalDepthSensorNode::can_thread_function, this);
         return LifecycleNode::on_activate(state);
     }
 
     CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override {
         depth_pub_->on_deactivate();
+        status_pub_->on_deactivate(); // 【新增】去激活状态发布者
+        
         is_running_ = false;
         if (can_thread_.joinable()) can_thread_.join();
         
@@ -131,7 +133,9 @@ public:
 
     CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override {
         depth_pub_.reset();
+        status_pub_.reset(); // 【新增】清理状态发布者
         publish_timer_.reset();
+        watchdog_timer_.reset(); 
         return CallbackReturn::SUCCESS;
     }
 
@@ -148,7 +152,10 @@ public:
 
 private:
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<hal::msg::HalDepthsensorMsg>> depth_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>> status_pub_; // 【新增】状态发布者指针
+    
     rclcpp::TimerBase::SharedPtr publish_timer_;
+    rclcpp::TimerBase::SharedPtr watchdog_timer_; 
 
     hal::msg::HalDepthsensorMsg cached_msg_;
     std::mutex msg_mutex_;
@@ -156,10 +163,77 @@ private:
     int can_socket_ = -1;
     std::thread can_thread_;
     std::atomic<bool> is_running_{false};
+    
+    // 【新增】连接状态标志位，使用 atomic 保证多线程安全
+    std::atomic<bool> is_connected_{false}; 
 
     // 记录两个传感器是否更新过数据，用于计算平均值
     bool has_data_1_ = false;
     bool has_data_2_ = false;
+
+    // 【新增】发布连接状态的工具函数
+    void publish_status(const std::string& state_str) {
+        if (status_pub_ && status_pub_->is_activated()) {
+            std_msgs::msg::String msg;
+            msg.data = state_str;
+            status_pub_->publish(msg);
+        }
+    }
+
+    // 封装好的唤醒指令函数
+    void send_nmt_wakeup() {
+        if (can_socket_ < 0) return;
+        struct can_frame start_frame;
+        start_frame.can_id = 0x000; // NMT 广播 ID
+        start_frame.can_dlc = 8;
+        std::memset(start_frame.data, 0, 8);
+        start_frame.data[0] = 0x01; // 0x01 代表“启动”节点通信
+        start_frame.data[1] = 0x00; // 0x00 代表广播给所有节点
+        
+        if (write(can_socket_, &start_frame, sizeof(start_frame)) < 0) {
+            RCLCPP_WARN(this->get_logger(), "唤醒指令发送失败，请检查 CAN 连接状态");
+        } else {
+            RCLCPP_INFO(this->get_logger(), "已成功发送水深传感器唤醒指令 (NMT Start)");
+        }
+    }
+
+    // 看门狗回调逻辑
+    void watchdog_callback() {
+        if (!is_running_) return;
+
+        uint64_t current_time = this->now().nanoseconds();
+        uint64_t last_time;
+        {
+            std::lock_guard<std::mutex> lock(msg_mutex_);
+            last_time = cached_msg_.timestamp;
+        }
+
+        // 判断：从未收到数据(0)，或者距离上次收到数据超过 2 秒 (2,000,000,000 纳秒)
+        if (last_time == 0 || (current_time - last_time) > 2000000000ULL) {
+            
+            // 【新增状态逻辑】如果之前是连接状态，现在断开了，只触发一次发布
+            if (is_connected_) {
+                is_connected_ = false;
+                publish_status("DISCONNECTED");
+                RCLCPP_ERROR(this->get_logger(), "触发看门狗！未收到水深数据超时，传感器已断开。");
+            }
+            
+            // 下方保留原有的尝试重连机制
+            if (can_socket_ >= 0) {
+                close(can_socket_);
+                can_socket_ = -1;
+            }
+            
+            // 重新拉起套接字
+            std::string can_iface = this->get_parameter("can_interface").as_string();
+            can_socket_ = setup_can_socket(can_iface);
+            
+            // 重新发送唤醒报文
+            if (can_socket_ >= 0) {
+                send_nmt_wakeup();
+            }
+        }
+    }
 
     void publish_timer_callback() {
         if (depth_pub_->is_activated()) {
@@ -195,6 +269,7 @@ private:
 
             int ret = select(can_socket_ + 1, &read_fds, NULL, NULL, &tv);
 
+            // ret > 0 说明有数据可读
             if (ret > 0 && FD_ISSET(can_socket_, &read_fds)) {
                 int nbytes = read(can_socket_, &frame, sizeof(struct can_frame));
                 
@@ -202,8 +277,8 @@ private:
                     // 1. 过滤无效长度
                     if (frame.can_dlc < 8) continue; 
 
-                    // 2. 匹配真实的 CANOpen PDO ID (0x182 为2号节点，0x183 为3号节点)
-                    if (frame.can_id != 0x183 && frame.can_id != 0x182) {
+                    // 2. 匹配真实的 CANOpen PDO ID (0x181 为1号节点，0x182 为2号节点)
+                    if (frame.can_id != 0x181 && frame.can_id != 0x182) {
                         continue; 
                     }
 
@@ -218,6 +293,13 @@ private:
                     // 安全过滤：防止传感器异常发来 NaN 或 无穷大
                     if (std::isnan(depth_val) || std::isinf(depth_val)) {
                         continue;
+                    }
+
+                    // 【新增状态逻辑】只要成功读出合法数据，就检查并恢复连接状态
+                    if (!is_connected_) {
+                        is_connected_ = true;
+                        publish_status("CONNECTED");
+                        RCLCPP_INFO(this->get_logger(), "传感器已恢复连接，收到有效数据。");
                     }
 
                     // 5. 获取锁，更新缓存，供 50Hz 定时器发布
