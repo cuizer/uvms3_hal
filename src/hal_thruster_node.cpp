@@ -205,7 +205,7 @@ private:
 
     void execute_test_sequence(bool is_main_thruster) {
         is_testing_ = true; 
-        double test_thrust_pct = 10.0; // 10% 推力
+        double test_thrust_pct = 5.0; // 5% 推力
         
         // 🚨 新增：用一个数组装载需要测试的 Node ID
         std::vector<uint32_t> test_nodes;
