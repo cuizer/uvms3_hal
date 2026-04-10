@@ -15,7 +15,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <cstring>
-#include <sys/ioctl.h>
+#include <sys/select.h>
 
 /**
  * @brief 原生 Linux 串口初始化函数 
@@ -55,7 +55,7 @@ int setup_native_uart(const std::string& port_name) {
     }
 
     tcflush(fd, TCIFLUSH);
-    fcntl(fd, F_SETFL, 0);
+    fcntl(fd, F_SETFL, O_NONBLOCK);
 
     return fd;
 }
@@ -152,8 +152,8 @@ private:
         std::string cmd = "$" + payload + "*" + checksum_ss.str() + "\r\n";
         
         int bytes_written = write(serial_fd_, cmd.c_str(), cmd.length());
-        if (bytes_written < 0) {
-            RCLCPP_WARN(this->get_logger(), "向惯导写入 DVL 辅助数据失败");
+        if (bytes_written < 0 && errno != EAGAIN) {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "向惯导写入 DVL 辅助数据失败");
         }
     }
 
@@ -189,16 +189,13 @@ private:
                 std::lock_guard<std::mutex> lock(msg_mutex_);
                 cached_msg_.timestamp = capture_time_ns;
                 
-                // 姿态数据
                 cached_msg_.yaw   = yaw;
                 cached_msg_.pitch = tokens[4].empty() ? 0.0f : std::stof(tokens[4]);
                 cached_msg_.roll  = tokens[5].empty() ? 0.0f : std::stof(tokens[5]);
                 
-                // 位置数据
                 cached_msg_.latitude  = tokens[8].empty() ? 0.0f : std::stof(tokens[8]);
                 cached_msg_.longitude = tokens[9].empty() ? 0.0f : std::stof(tokens[9]);
                 
-                // 【关键修复】使用你 msg 文件里定义的真实变量名：east_velocity, north_velocity, sky_velocity
                 cached_msg_.east_velocity  = tokens[11].empty() ? 0.0f : std::stof(tokens[11]);
                 cached_msg_.north_velocity = tokens[12].empty() ? 0.0f : std::stof(tokens[12]);
                 cached_msg_.sky_velocity   = tokens[13].empty() ? 0.0f : std::stof(tokens[13]);
@@ -225,30 +222,52 @@ private:
                     RCLCPP_INFO(this->get_logger(), "惯导原生串口已打开: %s", port.c_str());
                 }
 
-                int available_bytes = 0;
-                if (ioctl(serial_fd_, FIONREAD, &available_bytes) < 0) {
-                    throw std::runtime_error("底层 ioctl 错误，串口可能断开");
-                }
+                // 【优化 3】使用 select 取代 ioctl 和 sleep_for
+                fd_set read_fds;
+                FD_ZERO(&read_fds);
+                FD_SET(serial_fd_, &read_fds);
 
-                if (available_bytes > 0) {
-                    int64_t capture_time_ns = this->now().nanoseconds();
-                    int bytes_to_read = std::min(available_bytes, (int)sizeof(read_buf));
-                    
-                    int bytes_read = read(serial_fd_, read_buf, bytes_to_read);
-                    if (bytes_read < 0) throw std::runtime_error("原生 read 失败");
+                struct timeval tv;
+                tv.tv_sec = 0;
+                tv.tv_usec = 5000; // 5ms 超时，确保不阻塞主节点退出指令
 
-                    buffer.append(read_buf, bytes_read);
+                int ret = select(serial_fd_ + 1, &read_fds, NULL, NULL, &tv);
+
+                if (ret < 0) {
+                    throw std::runtime_error("select 监听底层错误");
+                } 
+                else if (ret > 0 && FD_ISSET(serial_fd_, &read_fds)) {
+                    // 数据就绪，一次性读取
+                    int bytes_read = read(serial_fd_, read_buf, sizeof(read_buf));
                     
-                    size_t pos = 0;
-                    while ((pos = buffer.find("\r\n")) != std::string::npos) {
-                        std::string line = buffer.substr(0, pos);
-                        buffer.erase(0, pos + 2);
-                        
-                        if (line.rfind("$UZHDR", 0) == 0) {
-                            parse_and_cache(line, capture_time_ns);
+                    if (bytes_read < 0) {
+                        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                            throw std::runtime_error("原生 read 失败");
                         }
+                    } else if (bytes_read > 0) {
+                        int64_t capture_time_ns = this->now().nanoseconds();
+                        buffer.append(read_buf, bytes_read);
+                        
+                        // 【优化 4】批量清理内存优化，去除 erase 的 CPU 开销
+                        size_t pos = 0;
+                        size_t processed_pos = 0;
+                        
+                        while ((pos = buffer.find("\r\n", processed_pos)) != std::string::npos) {
+                            std::string line = buffer.substr(processed_pos, pos - processed_pos);
+                            processed_pos = pos + 2; 
+                            
+                            if (line.rfind("$UZHDR", 0) == 0) {
+                                parse_and_cache(line, capture_time_ns);
+                            }
+                        }
+                        
+                        // 只在最后清理废弃内存
+                        if (processed_pos > 0) {
+                            buffer.erase(0, processed_pos);
+                        }
+                        
+                        if (buffer.size() > 4096) buffer.clear(); 
                     }
-                    if (buffer.size() > 4096) buffer.clear(); 
                 }
             } catch (const std::exception& e) {
                 RCLCPP_ERROR(this->get_logger(), "惯导异常: %s", e.what());
@@ -258,7 +277,6 @@ private:
                 }
                 std::this_thread::sleep_for(2s);
             }
-            std::this_thread::sleep_for(5ms); 
         }
     }
 };

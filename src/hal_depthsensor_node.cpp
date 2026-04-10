@@ -2,8 +2,9 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "hal/msg/hal_depthsensor_msg.hpp" 
 #include <cmath> 
-#include <cstring>  // <--- 新增这一行！
-#include <cmath>
+#include <algorithm> // 包含 std::max
+
+// 引入 Linux 底层网络与 SocketCAN 系统头文件
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -11,12 +12,52 @@
 #include <linux/can/raw.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/select.h>
 #include <thread>
 #include <mutex>
 #include <chrono>
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 using namespace std::chrono_literals;
+
+/**
+ * @brief 原生 Linux SocketCAN 初始化函数 
+ */
+int setup_can_socket(const std::string& interface_name) {
+    int s;
+    struct sockaddr_can addr;
+    struct ifreq ifr;
+
+    // 创建 RAW CAN socket
+    if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
+        return -1;
+    }
+
+    // 获取接口索引
+    std::strncpy(ifr.ifr_name, interface_name.c_str(), IFNAMSIZ - 1);
+    ifr.ifr_name[IFNAMSIZ - 1] = '\0';
+    if (ioctl(s, SIOCGIFINDEX, &ifr) < 0) {
+        close(s);
+        return -1;
+    }
+
+    // 绑定 Socket 到指定 CAN 接口
+    memset(&addr, 0, sizeof(addr));
+    addr.can_family = AF_CAN;
+    addr.can_ifindex = ifr.ifr_ifindex;
+
+    if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        close(s);
+        return -1;
+    }
+
+    // 设置 Socket 为非阻塞模式，防止死锁
+    int flags = fcntl(s, F_GETFL, 0);
+    fcntl(s, F_SETFL, flags | O_NONBLOCK);
+
+    return s;
+}
 
 class HalDepthSensorNode : public rclcpp_lifecycle::LifecycleNode
 {
@@ -25,46 +66,54 @@ public:
     : rclcpp_lifecycle::LifecycleNode(node_name)
     {
         this->declare_parameter<std::string>("can_interface", "can0");
+        
+        // 初始化缓存消息，防止初始时刻发送未定义的随机内存值
+        cached_msg_.depth_1 = 0.0f;
+        cached_msg_.depth_2 = 0.0f;
+        cached_msg_.temp_1 = 0.0f;
+        cached_msg_.temp_2 = 0.0f;
+        cached_msg_.depth_avg = 0.0f;
+        cached_msg_.timestamp = 0;
     }
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &) override {
         RCLCPP_INFO(get_logger(), "配置中... 初始化水深传感器发布者 (固定 50Hz)。");
         depth_pub_ = this->create_publisher<hal::msg::HalDepthsensorMsg>("hal_depthsensor_msg", 10);
         
-        // 【新增】创建 50Hz (20ms) 定时器，专门负责发布
+        // 创建 50Hz (20ms) 定时器，专门负责数据发布
         publish_timer_ = this->create_wall_timer(
             20ms, std::bind(&HalDepthSensorNode::publish_timer_callback, this));
-            
+
         return CallbackReturn::SUCCESS;
     }
 
     CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override {
-        depth_pub_->on_activate();
         std::string can_iface = this->get_parameter("can_interface").as_string();
+        can_socket_ = setup_can_socket(can_iface);
         
-        can_socket_ = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-        if (can_socket_ < 0) return CallbackReturn::FAILURE;
-
-        struct ifreq ifr;
-        strcpy(ifr.ifr_name, can_iface.c_str());
-        ioctl(can_socket_, SIOCGIFINDEX, &ifr);
-
-        struct sockaddr_can addr;
-        memset(&addr, 0, sizeof(addr));
-        addr.can_family = AF_CAN;
-        addr.can_ifindex = ifr.ifr_ifindex;
-
-        if (bind(can_socket_, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-            close(can_socket_);
+        if (can_socket_ < 0) {
+            RCLCPP_ERROR(this->get_logger(), "无法打开 CAN 接口: %s", can_iface.c_str());
             return CallbackReturn::FAILURE;
         }
 
-        int timestamp_on = 1;
-        setsockopt(can_socket_, SOL_SOCKET, SO_TIMESTAMP, &timestamp_on, sizeof(timestamp_on));
+        // 【关键新增】发送 CANOpen NMT 启动指令，唤醒总线上所有水深传感器
+        struct can_frame start_frame;
+        start_frame.can_id = 0x000; // NMT 广播 ID
+        start_frame.can_dlc = 8;
+        std::memset(start_frame.data, 0, 8);
+        start_frame.data[0] = 0x01; // 0x01 代表“启动”节点通信
+        start_frame.data[1] = 0x00; // 0x00 代表广播给所有节点
+        
+        // 发送唤醒指令
+        if (write(can_socket_, &start_frame, sizeof(start_frame)) < 0) {
+            RCLCPP_WARN(this->get_logger(), "发送传感器唤醒指令失败，请检查 CAN 连接状态");
+        } else {
+            RCLCPP_INFO(this->get_logger(), "已成功发送水深传感器唤醒指令 (NMT Start)");
+        }
 
+        depth_pub_->on_activate();
         is_running_ = true;
         can_thread_ = std::thread(&HalDepthSensorNode::can_thread_function, this);
-        
         return LifecycleNode::on_activate(state);
     }
 
@@ -72,7 +121,11 @@ public:
         depth_pub_->on_deactivate();
         is_running_ = false;
         if (can_thread_.joinable()) can_thread_.join();
-        if (can_socket_ >= 0) { close(can_socket_); can_socket_ = -1; }
+        
+        if (can_socket_ >= 0) {
+            close(can_socket_);
+            can_socket_ = -1;
+        }
         return LifecycleNode::on_deactivate(state);
     }
 
@@ -85,120 +138,112 @@ public:
     CallbackReturn on_shutdown(const rclcpp_lifecycle::State &) override {
         is_running_ = false;
         if (can_thread_.joinable()) can_thread_.join();
-        if (can_socket_ >= 0) close(can_socket_);
+        
+        if (can_socket_ >= 0) {
+            close(can_socket_);
+            can_socket_ = -1;
+        }
         return CallbackReturn::SUCCESS;
     }
 
 private:
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<hal::msg::HalDepthsensorMsg>> depth_pub_;
-    rclcpp::TimerBase::SharedPtr publish_timer_; // 【新增】发布定时器
-    
-    hal::msg::HalDepthsensorMsg cached_msg_;     // 【新增】数据缓存
-    std::mutex msg_mutex_;                       // 【新增】互斥锁，保护缓存
-    
+    rclcpp::TimerBase::SharedPtr publish_timer_;
+
+    hal::msg::HalDepthsensorMsg cached_msg_;
+    std::mutex msg_mutex_;
+
     int can_socket_ = -1;
     std::thread can_thread_;
     std::atomic<bool> is_running_{false};
 
-    // 【新增】定时器回调：以严格的 50Hz 频率执行
+    // 记录两个传感器是否更新过数据，用于计算平均值
+    bool has_data_1_ = false;
+    bool has_data_2_ = false;
+
     void publish_timer_callback() {
         if (depth_pub_->is_activated()) {
             hal::msg::HalDepthsensorMsg msg_to_publish;
             {
-                // 加锁，将底层线程刚写入的最新数据拷贝出来，然后迅速解锁
                 std::lock_guard<std::mutex> lock(msg_mutex_);
                 msg_to_publish = cached_msg_;
             }
-            // 发布拷贝出的数据（此时时间戳仍是硬件底层赋予的精准时间）
-            depth_pub_->publish(msg_to_publish);
+            // 只有在获取到时间戳（说明收到过CAN数据）后才发布
+            if (msg_to_publish.timestamp != 0) {
+                depth_pub_->publish(msg_to_publish);
+            }
         }
     }
-void can_thread_function() {
-        struct msghdr msg;
-        struct iovec iov;
+
+    void can_thread_function() {
         struct can_frame frame;
-        char ctrlmsg[CMSG_SPACE(sizeof(struct timeval))]; 
-
-        iov.iov_base = &frame;
-        iov.iov_len = sizeof(frame);
-        msg.msg_name = NULL; msg.msg_namelen = 0; msg.msg_iov = &iov; msg.msg_iovlen = 1;
-        msg.msg_control = &ctrlmsg; msg.msg_controllen = sizeof(ctrlmsg); msg.msg_flags = 0;
-
-        float temp_d1 = 0.0f, temp_d2 = 0.0f;
 
         while (rclcpp::ok() && is_running_) {
-            // 1. 【新增】断线自动重连机制
             if (can_socket_ < 0) {
-                // 假设你有一个初始化 CAN 的函数，例如 setup_can_socket()
-                // can_socket_ = setup_can_socket("can0");
-                if (can_socket_ < 0) {
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
-                    continue; // 重连失败则继续等待
-                }
-                RCLCPP_INFO(this->get_logger(), "CAN Socket 重新连接成功!");
-            }
-
-            // 2. 原生 Socket 错误不抛异常，需检查返回值
-            int nbytes = recvmsg(can_socket_, &msg, 0);
-            
-            if (nbytes < 0) {
-                // 非阻塞模式下没数据属于正常情况
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
-                    continue;
-                }
-                // 其他情况视为总线错误/断开
-                RCLCPP_ERROR(this->get_logger(), "CAN 接收错误: %s", strerror(errno));
-                close(can_socket_);
-                can_socket_ = -1; // 触发下一次循环的重连
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                std::this_thread::sleep_for(1s);
                 continue;
             }
 
-            if (nbytes > 0) {
-                // 【核心修复】必须校验 CAN 数据长度 (DLC)，防止 memcpy 越界读取垃圾内存
-                if (frame.can_dlc < sizeof(float)) {
-                    RCLCPP_DEBUG(this->get_logger(), "收到残缺 CAN 帧，已丢弃");
-                    continue;
-                }
+            // 使用 select 机制替代忙轮询，防止阻塞和死锁
+            fd_set read_fds;
+            FD_ZERO(&read_fds);
+            FD_SET(can_socket_, &read_fds);
 
-                int64_t can_timestamp_ns = 0;
-                struct cmsghdr *cmsg;
-                struct timeval tv;
-                for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-                    if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMP) {
-                        memcpy(&tv, CMSG_DATA(cmsg), sizeof(tv));
-                        can_timestamp_ns = tv.tv_sec * 1000000000ULL + tv.tv_usec * 1000ULL;
-                        break;
+            struct timeval tv;
+            tv.tv_sec = 0;
+            tv.tv_usec = 10000; // 10ms 超时响应
+
+            int ret = select(can_socket_ + 1, &read_fds, NULL, NULL, &tv);
+
+            if (ret > 0 && FD_ISSET(can_socket_, &read_fds)) {
+                int nbytes = read(can_socket_, &frame, sizeof(struct can_frame));
+                
+                if (nbytes == sizeof(struct can_frame)) {
+                    // 1. 过滤无效长度
+                    if (frame.can_dlc < 8) continue; 
+
+                    // 2. 匹配真实的 CANOpen PDO ID (0x182 为2号节点，0x183 为3号节点)
+                    if (frame.can_id != 0x183 && frame.can_id != 0x182) {
+                        continue; 
                     }
-                }
-                if (can_timestamp_ns == 0) can_timestamp_ns = this->now().nanoseconds();
 
-                // 提取浮点数数据
-                float parsed_val = 0.0f;
-                std::memcpy(&parsed_val, frame.data, sizeof(float));
+                    // 3. 按协议提取为 32 位有符号整数 (小端模式拼接)
+                    int32_t raw_pressure = (frame.data[3] << 24) | (frame.data[2] << 16) | (frame.data[1] << 8) | frame.data[0];
+                    int32_t raw_temp     = (frame.data[7] << 24) | (frame.data[6] << 16) | (frame.data[5] << 8) | frame.data[4];
 
-                // 【新增】安全过滤：防止传感器死机发来 NaN 或 无穷大数据引发控制灾难
-                if (std::isnan(parsed_val) || std::isinf(parsed_val)) {
-                    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "水深传感器发来无效浮点数(NaN/Inf)");
-                    continue;
-                }
+                    // 4. 物理换算 (根据说明书及老代码常量)
+                    float depth_val = (float)raw_pressure * 100.0f / (9.8f * 1000.0f);
+                    float temp_val  = (float)raw_temp / 1000.0f;
 
-                if (frame.can_id == 0x101) {
-                    temp_d1 = parsed_val;
-                } else if (frame.can_id == 0x102) {
-                    temp_d2 = parsed_val;
-                } else {
-                    continue; // 不是水深数据包，跳过后续加锁，节省性能
-                }
+                    // 安全过滤：防止传感器异常发来 NaN 或 无穷大
+                    if (std::isnan(depth_val) || std::isinf(depth_val)) {
+                        continue;
+                    }
 
-                // 获取锁，更新缓存，供 50Hz 定时器发布
-                {
-                    std::lock_guard<std::mutex> lock(msg_mutex_);
-                    cached_msg_.depth_1 = temp_d1;
-                    cached_msg_.depth_2 = temp_d2;
-                    cached_msg_.depth_avg = (temp_d1 > 0 && temp_d2 > 0) ? (temp_d1 + temp_d2) / 2.0f : std::max(temp_d1, temp_d2);
-                    cached_msg_.timestamp = can_timestamp_ns; 
+                    // 5. 获取锁，更新缓存，供 50Hz 定时器发布
+                    {
+                        std::lock_guard<std::mutex> lock(msg_mutex_);
+                        cached_msg_.timestamp = this->now().nanoseconds();
+                        
+                        if (frame.can_id == 0x181) {
+                            cached_msg_.depth_1 = depth_val;
+                            cached_msg_.temp_1  = temp_val;
+                            has_data_1_ = true;
+                        } else if (frame.can_id == 0x182) {
+                            cached_msg_.depth_2 = depth_val;
+                            cached_msg_.temp_2  = temp_val;
+                            has_data_2_ = true;
+                        }
+
+                        // 计算平均深度：用布尔标志位判断，取代原有的 0 值判断，避免零漂在空气中为负数时的逻辑错误
+                        if (has_data_1_ && has_data_2_) {
+                            cached_msg_.depth_avg = (cached_msg_.depth_1 + cached_msg_.depth_2) / 2.0f;
+                        } else if (has_data_1_) {
+                            cached_msg_.depth_avg = cached_msg_.depth_1;
+                        } else if (has_data_2_) {
+                            cached_msg_.depth_avg = cached_msg_.depth_2;
+                        }
+                    }
                 }
             }
         }
@@ -207,7 +252,9 @@ void can_thread_function() {
 
 int main(int argc, char ** argv) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<HalDepthSensorNode>("hal_depthsensor_node")->get_node_base_interface());
+    // 使用 std::make_shared 创建并自动管理节点生命周期
+    auto node = std::make_shared<HalDepthSensorNode>("hal_depthsensor_node");
+    rclcpp::spin(node->get_node_base_interface());
     rclcpp::shutdown();
     return 0;
 }

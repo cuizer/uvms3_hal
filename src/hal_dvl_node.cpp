@@ -14,11 +14,10 @@
 #include <termios.h>
 #include <unistd.h>
 #include <cstring>
-#include <sys/ioctl.h> // 【新增】用于查询串口缓冲区是否有数据
+#include <sys/select.h> // 【新增】用于 select 机制
 
 /**
  * @brief 原生 Linux 串口初始化函数 
- * @return 成功返回文件描述符 (fd > 0)，失败返回 -1
  */
 int setup_native_uart(const std::string& port_name) {
     int fd = open(port_name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
@@ -55,7 +54,7 @@ int setup_native_uart(const std::string& port_name) {
     }
 
     tcflush(fd, TCIFLUSH);
-    fcntl(fd, F_SETFL, 0);
+    fcntl(fd, F_SETFL, O_NONBLOCK); // 确保非阻塞模式
 
     return fd;
 }
@@ -93,7 +92,6 @@ public:
         is_running_ = false;
         if (dvl_thread_.joinable()) dvl_thread_.join();
         
-        // 【修复】语法错误并替换为原生关闭串口
         if (serial_fd_ >= 0) {
             close(serial_fd_);
             serial_fd_ = -1;
@@ -111,7 +109,6 @@ public:
         is_running_ = false;
         if (dvl_thread_.joinable()) dvl_thread_.join();
         
-        // 【替换】原生关闭串口
         if (serial_fd_ >= 0) {
             close(serial_fd_);
             serial_fd_ = -1;
@@ -126,7 +123,7 @@ private:
     hal::msg::HalDvlMsg cached_msg_; 
     std::mutex msg_mutex_;           
 
-    int serial_fd_ = -1; // 仅保留这一个原生文件描述符
+    int serial_fd_ = -1; 
     std::thread dvl_thread_;
     std::atomic<bool> is_running_{false};
 
@@ -146,24 +143,19 @@ private:
         std::stringstream ss(data);
         std::string item;
         
-        // 按照逗号拆分报文
         while (std::getline(ss, item, ',')) {
             tokens.push_back(item);
         }
 
-        // 假设你们的 DVL 报文有至少 5 个字段 (例如: wrz,vx,vy,vz,valid)
         if (tokens.size() >= 5) {
             try {
-                // 使用 .empty() 检查，防止空字符串导致 std::stof 抛出异常
                 float vx = tokens[1].empty() ? 0.0f : std::stof(tokens[1]);
                 float vy = tokens[2].empty() ? 0.0f : std::stof(tokens[2]);
                 float vz = tokens[3].empty() ? 0.0f : std::stof(tokens[3]);
                 
                 std::string valid = tokens[4];
-                // 剔除末尾可能带有的 \r \n 空格等不可见字符
                 valid.erase(valid.find_last_not_of(" \n\r\t") + 1);
 
-                // 如果底面锁定且数据有效 (根据实际 DVL 说明书可能为 'y' 或其他标识)
                 if (valid == "y" || valid == "Y") {
                     std::lock_guard<std::mutex> lock(msg_mutex_);
                     cached_msg_.timestamp = capture_time_ns;
@@ -175,7 +167,6 @@ private:
                                          "DVL未锁定底部，当前数据丢弃!");
                 }
             } catch (const std::exception& e) {
-                // 捕获到乱码导致转换失败，只打印 Debug 警告，绝不断开原生串口！
                 RCLCPP_DEBUG(this->get_logger(), "DVL 脏数据解析跳过 (乱码): %s", e.what());
             }
         }
@@ -183,65 +174,76 @@ private:
 
     void dvl_thread_function() {
         std::string buffer = "";
-        char read_buf[1024]; // 用于原生 read 的临时数组
+        char read_buf[1024]; 
 
         while (rclcpp::ok() && is_running_) {
             try {
-                // 1. 如果串口未打开，则尝试打开 (替代 !serial_.isOpen())
                 if (serial_fd_ < 0) {
                     std::string port = this->get_parameter("port_name").as_string();
                     serial_fd_ = setup_native_uart(port);
                     if (serial_fd_ < 0) {
-                        std::this_thread::sleep_for(1s); // 失败则等1秒再试
+                        std::this_thread::sleep_for(1s); 
                         continue;
                     }
                     RCLCPP_INFO(this->get_logger(), "DVL 原生串口已打开: %s", port.c_str());
                 }
 
-                // 2. 查询缓冲区里有多少字节 (替代 serial_.available())
-                int available_bytes = 0;
-                if (ioctl(serial_fd_, FIONREAD, &available_bytes) < 0) {
-                    throw std::runtime_error("底层 ioctl 通信错误，串口可能已断开");
-                }
+                // 【优化 3】使用 select 取代 ioctl 和 sleep_for，实现数据秒唤醒
+                fd_set read_fds;
+                FD_ZERO(&read_fds);
+                FD_SET(serial_fd_, &read_fds);
 
-                if (available_bytes > 0) {
-                    // 第一时间抓取时间戳
-                    int64_t capture_time_ns = this->now().nanoseconds();
-                    
-                    // 限制最大读取量防止数组越界
-                    int bytes_to_read = std::min(available_bytes, (int)sizeof(read_buf));
-                    
-                    // 3. 原生读取 (替代 serial_.read())
-                    int bytes_read = read(serial_fd_, read_buf, bytes_to_read);
+                struct timeval tv;
+                tv.tv_sec = 0;
+                tv.tv_usec = 10000; // 10ms 超时
+
+                int ret = select(serial_fd_ + 1, &read_fds, NULL, NULL, &tv);
+                
+                if (ret < 0) {
+                    throw std::runtime_error("select 监听底层错误");
+                } 
+                else if (ret > 0 && FD_ISSET(serial_fd_, &read_fds)) {
+                    // 数据已就绪，直接读取
+                    int bytes_read = read(serial_fd_, read_buf, sizeof(read_buf));
                     if (bytes_read < 0) {
-                        throw std::runtime_error("原生 read 错误");
-                    }
-
-                    // 将读取到的 C 风格字符数组追加到 std::string 缓冲区中
-                    buffer.append(read_buf, bytes_read);
-                    
-                    size_t pos = 0;
-                    while ((pos = buffer.find("\r\n")) != std::string::npos) {
-                        std::string line = buffer.substr(0, pos);
-                        buffer.erase(0, pos + 2);
-                        
-                        if (line.rfind("$DVLHDR", 0) == 0) {
-                            parse_and_cache(line, capture_time_ns); 
+                        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                            throw std::runtime_error("原生 read 错误");
                         }
+                    } else if (bytes_read > 0) {
+                        int64_t capture_time_ns = this->now().nanoseconds();
+                        buffer.append(read_buf, bytes_read);
+                        
+                        // 【优化 4】批量清理内存，消除频繁 erase 带来的 CPU 浪费和内存碎片化
+                        size_t pos = 0;
+                        size_t processed_pos = 0;
+                        
+                        while ((pos = buffer.find("\r\n", processed_pos)) != std::string::npos) {
+                            std::string line = buffer.substr(processed_pos, pos - processed_pos);
+                            processed_pos = pos + 2; // 只移动指针
+                            
+                            if (line.rfind("$DVLHDR", 0) == 0) {
+                                parse_and_cache(line, capture_time_ns); 
+                            }
+                        }
+                        
+                        // 循环结束后一次性截断废弃内存
+                        if (processed_pos > 0) {
+                            buffer.erase(0, processed_pos);
+                        }
+                        
+                        if (buffer.size() > 4096) buffer.clear(); // 防止脏数据无限累积
                     }
-                    if (buffer.size() > 4096) buffer.clear(); 
                 }
+                // 注意：去除了原来的 sleep_for(10ms)，因为 select 在没有数据时会自动挂起线程
             } 
-            // 4. 异常处理 (原生 API 报错会通过 throw 抛出到这里)
             catch (const std::exception& e) {
                 RCLCPP_ERROR(this->get_logger(), "DVL 串口异常: %s", e.what());
                 if (serial_fd_ >= 0) {
                     close(serial_fd_);
-                    serial_fd_ = -1; // 触发下一次循环的重新打开
+                    serial_fd_ = -1; 
                 }
                 std::this_thread::sleep_for(2s); 
             }
-            std::this_thread::sleep_for(10ms); 
         }
     }
 };
