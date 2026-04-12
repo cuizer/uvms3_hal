@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <cstring>  // <--- 新增这一行！
+
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/can.h>
@@ -31,15 +31,13 @@
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
 namespace uvms_hal_manipulator
 {
 
-// =========================
-// protocol_parser.hpp
-// =========================
 constexpr uint8_t APP_MSG_ID_ARMCABIN_MOTOR_DATA = 0x09;
 constexpr uint8_t APP_MSG_ID_ARM_MOTOR_DATA      = 0x0A;
 constexpr uint8_t APP_MSG_ID_ARM_CONTROLLER_DATA = 0x0B;
@@ -152,9 +150,6 @@ private:
     bool has_arm_controller_state_{false};
 };
 
-// =========================
-// can_driver.hpp
-// =========================
 class CanDriver
 {
 public:
@@ -176,9 +171,6 @@ private:
     std::string if_name_;
 };
 
-// =========================
-// safety_manager.hpp
-// =========================
 struct JointLimitConfig
 {
     std::vector<double> position_min;
@@ -236,9 +228,6 @@ private:
     bool estop_{false};
 };
 
-// =========================
-// manipulator_lifecycle_node.hpp
-// =========================
 class ManipulatorLifecycleNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
@@ -270,6 +259,12 @@ private:
     bool init_safety_config();
     bool init_can_driver();
     void reset_runtime_state();
+
+    bool is_my_motor_id(uint32_t can_id) const;
+    void build_expected_motor_id_list();
+    void update_initial_pose_completion();
+    void handle_communication_loss();
+    void perform_fault_stop();
 
     bool process_rx_frame(const CanFrame& frame);
     void publish_joint_states();
@@ -308,6 +303,7 @@ private:
     rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>::SharedPtr ee_pose_pub_;
     rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr status_pub_;
+    rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr fault_pub_;
 
     rclcpp::TimerBase::SharedPtr timer_;
 
@@ -325,11 +321,20 @@ private:
     ArmCabinMotorState latest_armcabin_motor_state_{};
     ArmMotorState latest_arm_motor_state_{};
     ArmControllerState latest_arm_controller_state_{};
+
+    std::string arm_side_;
+    bool require_initial_pose_before_activate_{true};
+    bool initial_pose_complete_{false};
+    bool control_enabled_{false};
+
+    std::vector<uint32_t> expected_motor_ids_;
+    std::map<uint32_t, bool> motor_ready_map_;
+
+    bool communication_lost_latched_{false};
+    bool fault_stop_requested_{false};
+    bool fault_stop_on_comm_loss_{true};
 };
 
-// =========================
-// can_driver.cpp
-// =========================
 CanDriver::CanDriver()
 : socket_fd_(-1)
 {
@@ -407,7 +412,6 @@ bool CanDriver::write_frame(const CanFrame& frame)
 
     struct can_frame raw_frame {};
     raw_frame.can_id = frame.can_id;
-    // 将 raw_frame.len = frame.dlc; 修改为：
     raw_frame.can_dlc = frame.dlc;
 
     for (uint8_t i = 0; i < frame.dlc && i < 8; ++i) {
@@ -451,7 +455,6 @@ bool CanDriver::read_frame(CanFrame& frame)
     }
 
     frame.can_id = raw_frame.can_id & CAN_EFF_MASK;
-    // 将 frame.dlc = raw_frame.len; 修改为：
     frame.dlc = raw_frame.can_dlc;
     frame.data.fill(0);
 
@@ -473,9 +476,6 @@ void CanDriver::flush()
     }
 }
 
-// =========================
-// safety_manager.cpp
-// =========================
 void SafetyManager::set_joint_limit_config(const JointLimitConfig& config)
 {
     joint_limit_config_ = config;
@@ -625,9 +625,6 @@ bool SafetyManager::check_size_match(
            positions.size() == velocities.size();
 }
 
-// =========================
-// protocol_parser.cpp
-// =========================
 CanFrame ProtocolParser::pack_arm_control_command(ArmControlCommand cmd) const
 {
     CanFrame frame;
@@ -843,15 +840,13 @@ uint16_t ProtocolParser::read_uint16_le(const std::vector<uint8_t>& data, size_t
            (static_cast<uint16_t>(data[offset + 1]) << 8);
 }
 
-// =========================
-// manipulator_lifecycle_node.cpp
-// =========================
 ManipulatorLifecycleNode::ManipulatorLifecycleNode(const rclcpp::NodeOptions& options)
 : rclcpp_lifecycle::LifecycleNode("manipulator_driver", options),
   arm_name_("arm"),
   can_interface_("can0"),
   base_frame_("base_link"),
   ee_frame_("ee_link"),
+  arm_side_("left"),
   last_rx_time_(0, 0, RCL_ROS_TIME)
 {
     RCLCPP_INFO(get_logger(), "ManipulatorLifecycleNode created.");
@@ -897,6 +892,9 @@ auto ManipulatorLifecycleNode::on_configure(const rclcpp_lifecycle::State&) -> C
     status_pub_ =
         create_publisher<std_msgs::msg::String>("hal/manipulator/status", rclcpp::QoS(10));
 
+    fault_pub_ =
+        create_publisher<std_msgs::msg::Bool>("hal/manipulator/fault", rclcpp::QoS(10));
+
     const auto period_ms =
         std::chrono::milliseconds(static_cast<int>(1000.0 / std::max(1.0, publish_rate_hz_)));
 
@@ -912,9 +910,20 @@ auto ManipulatorLifecycleNode::on_activate(const rclcpp_lifecycle::State&) -> Ca
 {
     RCLCPP_INFO(get_logger(), "[%s] on_activate()", get_name());
 
+    if (require_initial_pose_before_activate_ && !initial_pose_complete_) {
+        RCLCPP_WARN(
+            get_logger(),
+            "[%s] initial pose is not complete, activation refused.",
+            get_name());
+        return CallbackReturn::FAILURE;
+    }
+
     joint_state_pub_->on_activate();
     ee_pose_pub_->on_activate();
     status_pub_->on_activate();
+    fault_pub_->on_activate();
+
+    control_enabled_ = true;
 
     publish_status("Manipulator HAL node activated.");
     return CallbackReturn::SUCCESS;
@@ -933,7 +942,11 @@ auto ManipulatorLifecycleNode::on_deactivate(const rclcpp_lifecycle::State&) -> 
     if (status_pub_) {
         status_pub_->on_deactivate();
     }
+    if (fault_pub_) {
+        fault_pub_->on_deactivate();
+    }
 
+    control_enabled_ = false;
     return CallbackReturn::SUCCESS;
 }
 
@@ -948,6 +961,7 @@ auto ManipulatorLifecycleNode::on_cleanup(const rclcpp_lifecycle::State&) -> Cal
     joint_state_pub_.reset();
     ee_pose_pub_.reset();
     status_pub_.reset();
+    fault_pub_.reset();
 
     can_driver_.close();
     reset_runtime_state();
@@ -978,6 +992,10 @@ void ManipulatorLifecycleNode::declare_and_load_parameters()
     this->declare_parameter<double>("publish_rate_hz", 50.0);
     this->declare_parameter<bool>("debug_mode", false);
 
+    this->declare_parameter<std::string>("arm_side", "left");
+    this->declare_parameter<bool>("require_initial_pose_before_activate", true);
+    this->declare_parameter<bool>("fault_stop_on_comm_loss", true);
+
     this->declare_parameter<std::vector<std::string>>("joint_names", std::vector<std::string>{});
     this->declare_parameter<std::vector<double>>("joint.position_limit_min", std::vector<double>{});
     this->declare_parameter<std::vector<double>>("joint.position_limit_max", std::vector<double>{});
@@ -994,6 +1012,12 @@ void ManipulatorLifecycleNode::declare_and_load_parameters()
     publish_rate_hz_ = this->get_parameter("publish_rate_hz").as_double();
     debug_mode_ = this->get_parameter("debug_mode").as_bool();
 
+    arm_side_ = this->get_parameter("arm_side").as_string();
+    require_initial_pose_before_activate_ =
+        this->get_parameter("require_initial_pose_before_activate").as_bool();
+    fault_stop_on_comm_loss_ =
+        this->get_parameter("fault_stop_on_comm_loss").as_bool();
+
     joint_names_ = this->get_parameter("joint_names").as_string_array();
     joint_pos_min_ = this->get_parameter("joint.position_limit_min").as_double_array();
     joint_pos_max_ = this->get_parameter("joint.position_limit_max").as_double_array();
@@ -1005,8 +1029,8 @@ void ManipulatorLifecycleNode::declare_and_load_parameters()
 
     RCLCPP_INFO(
         get_logger(),
-        "Loaded parameters: arm_name=%s, can_interface=%s, publish_rate=%.2f",
-        arm_name_.c_str(), can_interface_.c_str(), publish_rate_hz_);
+        "Loaded parameters: arm_name=%s, can_interface=%s, arm_side=%s, publish_rate=%.2f",
+        arm_name_.c_str(), can_interface_.c_str(), arm_side_.c_str(), publish_rate_hz_);
 }
 
 bool ManipulatorLifecycleNode::init_safety_config()
@@ -1042,12 +1066,29 @@ void ManipulatorLifecycleNode::reset_runtime_state()
     latest_joint_position_.assign(joint_names_.size(), 0.0);
     latest_joint_velocity_.assign(joint_names_.size(), 0.0);
     latest_joint_effort_.assign(joint_names_.size(), 0.0);
+
+    initial_pose_complete_ = false;
+    control_enabled_ = false;
+
+    communication_lost_latched_ = false;
+    fault_stop_requested_ = false;
+
+    build_expected_motor_id_list();
 }
 
 void ManipulatorLifecycleNode::joint_cmd_callback(
     const trajectory_msgs::msg::JointTrajectoryPoint::SharedPtr msg)
 {
     if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
+        return;
+    }
+
+    if (communication_lost_latched_ || fault_stop_requested_) {
+        return;
+    }
+
+    if (!control_enabled_) {
+        publish_status("Control not enabled: initial pose is not ready.");
         return;
     }
 
@@ -1090,6 +1131,12 @@ void ManipulatorLifecycleNode::timer_callback()
         return;
     }
 
+    // 如果已经请求故障停机，则优先执行内部停机流程并直接返回
+    if (fault_stop_requested_) {
+        perform_fault_stop();
+        return;
+    }
+
     CanFrame frame;
     bool received = false;
 
@@ -1109,9 +1156,17 @@ void ManipulatorLifecycleNode::timer_callback()
     if (!debug_mode_) {
         const double elapsed = (this->now() - last_rx_time_).seconds();
         const auto comm_result = safety_manager_.check_communication_timeout(elapsed);
+
         if (!comm_result.ok) {
             communication_ok_ = false;
-            publish_status(comm_result.reason);
+
+            if (fault_stop_on_comm_loss_) {
+                handle_communication_loss();
+                return;
+            } else {
+                publish_status(comm_result.reason);
+                return;
+            }
         }
     } else {
         communication_ok_ = true;
@@ -1130,6 +1185,12 @@ void ManipulatorLifecycleNode::timer_callback()
 
 bool ManipulatorLifecycleNode::process_rx_frame(const CanFrame& frame)
 {
+    // 左右臂共享同一条 can0，总线上会出现两条臂的全部报文。
+    // 为避免左右臂状态串扰，必须先按 CAN ID 奇偶规则过滤本臂报文。
+    if (!is_my_motor_id(frame.can_id)) {
+        return false;
+    }
+
     const auto complete_msg = protocol_parser_.process_can_frame(frame);
     if (!complete_msg.has_value()) {
         return false;
@@ -1146,6 +1207,13 @@ bool ManipulatorLifecycleNode::process_rx_frame(const CanFrame& frame)
             latest_joint_velocity_[i] = static_cast<double>(latest_arm_motor_state_.speed[i]);
             latest_joint_effort_[i] = static_cast<double>(latest_arm_motor_state_.current[i]);
         }
+
+        auto it = motor_ready_map_.find(frame.can_id);
+        if (it != motor_ready_map_.end()) {
+            it->second = true;
+        }
+
+        update_initial_pose_completion();
     } else if (complete_msg->type == CompleteMessageType::ARM_CONTROLLER) {
         protocol_parser_.get_arm_controller_state(latest_arm_controller_state_);
     }
@@ -1226,6 +1294,111 @@ std::vector<double> ManipulatorLifecycleNode::uint16_array_to_double_vector_10(
         out[i] = static_cast<double>(arr[i]);
     }
     return out;
+}
+
+bool ManipulatorLifecycleNode::is_my_motor_id(uint32_t can_id) const
+{
+    if (arm_side_ == "left") {
+        return (can_id % 2 == 1);
+    } else if (arm_side_ == "right") {
+        return (can_id % 2 == 0);
+    }
+    return false;
+}
+
+void ManipulatorLifecycleNode::build_expected_motor_id_list()
+{
+    expected_motor_ids_.clear();
+    motor_ready_map_.clear();
+
+    for (uint32_t id = 0x01; id <= 0x0A; ++id) {
+        if (is_my_motor_id(id)) {
+            expected_motor_ids_.push_back(id);
+            motor_ready_map_[id] = false;
+        }
+    }
+
+    for (uint32_t id = 0x13; id <= 0x14; ++id) {
+        if (is_my_motor_id(id)) {
+            expected_motor_ids_.push_back(id);
+            motor_ready_map_[id] = false;
+        }
+    }
+}
+
+void ManipulatorLifecycleNode::update_initial_pose_completion()
+{
+    bool all_ready = !expected_motor_ids_.empty();
+
+    for (const auto& kv : motor_ready_map_) {
+        if (!kv.second) {
+            all_ready = false;
+            break;
+        }
+    }
+
+    initial_pose_complete_ = all_ready;
+}
+
+void ManipulatorLifecycleNode::handle_communication_loss()
+{
+    if (communication_lost_latched_) {
+        return;
+    }
+
+    communication_lost_latched_ = true;
+    fault_stop_requested_ = true;
+    control_enabled_ = false;
+    communication_ok_ = false;
+
+    RCLCPP_ERROR(
+        get_logger(),
+        "[%s] Communication timeout detected. Fault stop requested.",
+        get_name());
+
+    publish_status("Communication timeout detected. Node will stop I/O and request lifecycle fallback.");
+
+    if (fault_pub_ && fault_pub_->is_activated()) {
+        std_msgs::msg::Bool msg;
+        msg.data = true;
+        fault_pub_->publish(msg);
+    }
+}
+
+void ManipulatorLifecycleNode::perform_fault_stop()
+{
+    if (!fault_stop_requested_) {
+        return;
+    }
+
+    RCLCPP_ERROR(
+        get_logger(),
+        "[%s] Performing fault stop: disable publishers, stop timer, close CAN.",
+        get_name());
+
+    control_enabled_ = false;
+
+    if (joint_state_pub_ && joint_state_pub_->is_activated()) {
+        joint_state_pub_->on_deactivate();
+    }
+    if (ee_pose_pub_ && ee_pose_pub_->is_activated()) {
+        ee_pose_pub_->on_deactivate();
+    }
+    if (status_pub_ && status_pub_->is_activated()) {
+        status_pub_->on_deactivate();
+    }
+    if (fault_pub_ && fault_pub_->is_activated()) {
+        fault_pub_->on_deactivate();
+    }
+
+    if (timer_) {
+        timer_->cancel();
+    }
+
+    can_driver_.close();
+
+    // 保留 communication_lost_latched_ = true，表示仍在故障锁存态
+    fault_stop_requested_ = false;
 }
 
 }  // namespace uvms_hal_manipulator

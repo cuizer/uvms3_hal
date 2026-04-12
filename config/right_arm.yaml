@@ -1,7 +1,18 @@
 /**:
   ros__parameters:
     arm_name: right_arm
-    can_interface: vcan1
+
+    # 左右臂共用同一个物理 CAN 接口
+    can_interface: can0
+
+    # 当前节点属于右臂：right 处理偶数 CAN ID
+    arm_side: right
+
+    # activate 前必须完成本臂初始位姿同步
+    require_initial_pose_before_activate: true
+
+    # 通信断开后进入故障停机流程，并向外部 manager 发布 fault
+    fault_stop_on_comm_loss: true
 
     base_frame: right_arm_base
     ee_frame: right_gripper_link
