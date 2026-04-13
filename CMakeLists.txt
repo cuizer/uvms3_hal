@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(hal)
 
-# 【新增】强制要求 C++17 标准
+# 强制要求 C++17 标准
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -46,7 +46,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES std_msgs builtin_interfaces
 )
 
-# 【核心修复1】保留你的动态生成头文件路径设定 (虽然 rosidl_target_interfaces 会自动处理，保留无妨)
+# 保留动态生成头文件路径设定
 set(GEN_INCLUDE_DIR "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>")
 
 # 4. 各节点可执行文件
@@ -108,31 +108,39 @@ ament_target_dependencies(hal_manipulator_node
   lifecycle_msgs
 )
 
-#  编译水深传感器节点 (CAN)
+# 双臂生命周期管理节点
+add_executable(dual_arm_lifecycle_manager src/dual_arm_lifecycle_manager.cpp)
+ament_target_dependencies(dual_arm_lifecycle_manager
+  rclcpp
+  std_msgs
+  lifecycle_msgs
+)
+
+# 水深传感器节点
 add_executable(hal_depthsensor_node src/hal_depthsensor_node.cpp)
-ament_target_dependencies(hal_depthsensor_node 
-  rclcpp 
+ament_target_dependencies(hal_depthsensor_node
+  rclcpp
   rclcpp_lifecycle
   std_msgs
 )
 
-# 编译 DVL 节点 
+# DVL 节点
 add_executable(hal_dvl_node src/hal_dvl_node.cpp)
-ament_target_dependencies(hal_dvl_node 
-  rclcpp 
-  rclcpp_lifecycle 
+ament_target_dependencies(hal_dvl_node
+  rclcpp
+  rclcpp_lifecycle
   std_msgs
 )
 
-# 编译惯导节点 
+# 惯导节点
 add_executable(hal_inertialnavi_node src/hal_inertialnavi_node.cpp)
-ament_target_dependencies(hal_inertialnavi_node 
-  rclcpp 
-  rclcpp_lifecycle 
+ament_target_dependencies(hal_inertialnavi_node
+  rclcpp
+  rclcpp_lifecycle
   std_msgs
 )
 
-# 5. 链接自定义消息 (兼容 Foxy 和 Humble 的标准写法)
+# 5. 链接自定义消息
 rosidl_target_interfaces(hal_battery_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 rosidl_target_interfaces(hal_antennacontrol_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 rosidl_target_interfaces(hal_lightcontrol_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
@@ -142,7 +150,7 @@ rosidl_target_interfaces(hal_depthsensor_node ${PROJECT_NAME} "rosidl_typesuppor
 rosidl_target_interfaces(hal_dvl_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 rosidl_target_interfaces(hal_inertialnavi_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
-# 如果机械臂节点后续也需要使用本包自定义 msg/srv，可保留下面这行
+# 如果机械臂节点后续需要使用本包自定义 msg/srv，可启用下面这行
 # rosidl_target_interfaces(hal_manipulator_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 # 6. 安装可执行文件
@@ -153,6 +161,7 @@ install(TARGETS
   hal_servo_node
   hal_thruster_node
   hal_manipulator_node
+  dual_arm_lifecycle_manager
   hal_depthsensor_node
   hal_dvl_node
   hal_inertialnavi_node

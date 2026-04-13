@@ -578,9 +578,13 @@ ros2 param get /hal\_battery\_node simulation\_mode
 
 ### 真实硬件测试
 
-# 1. 配置CAN接口（需要sudo权限）
+colcon build --packages-select hal
+source install/setup.bash
 
+# 1. 配置CAN接口（需要sudo权限）
+sudo ip link set can0 down
 sudo ip link set can0 up type can bitrate 125000
+sudo ip link set can0 up
 
 # 2. 验证CAN接口
 

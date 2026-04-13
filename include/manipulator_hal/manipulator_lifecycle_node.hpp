@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -12,6 +14,7 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 
 #include "manipulator_hal/protocol_parser.hpp"
@@ -59,6 +62,12 @@ private:
     bool init_can_driver();
     void reset_runtime_state();
 
+    bool is_my_motor_id(uint32_t can_id) const;
+    void build_expected_motor_id_list();
+    void update_initial_pose_completion();
+    void handle_communication_loss();
+    void perform_fault_stop();
+
     bool process_rx_frame(const CanFrame& frame);
     void publish_joint_states();
     void publish_end_effector_pose();
@@ -74,8 +83,7 @@ private:
         const std::array<uint16_t, 10>& arr) const;
 
 private:
-    // ----------------------------    // ----------------------------
-
+    // ----------------------------
     // Parameters
     // ----------------------------
     std::string arm_name_;
@@ -90,8 +98,8 @@ private:
     std::vector<double> joint_pos_max_;
     std::vector<double> joint_vel_max_;
 
-    double max_current_{500.0};      // 通用默认值，后续可按真实单位修改
-    double max_temperature_{100.0};  // 通用默认值
+    double max_current_{500.0};
+    double max_temperature_{100.0};
     double comm_timeout_sec_{0.2};
 
     // ----------------------------
@@ -103,6 +111,7 @@ private:
     rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>::SharedPtr ee_pose_pub_;
     rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>::SharedPtr status_pub_;
+    rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr fault_pub_;
 
     rclcpp::TimerBase::SharedPtr timer_;
 
@@ -126,6 +135,29 @@ private:
     ArmCabinMotorState latest_armcabin_motor_state_{};
     ArmMotorState latest_arm_motor_state_{};
     ArmControllerState latest_arm_controller_state_{};
+
+    // 共享 can0 场景下的左右臂身份标识
+    std::string arm_side_;
+
+    // activate 前是否要求完成本臂初始位姿同步
+    bool require_initial_pose_before_activate_{true};
+
+    // 本臂初始位姿是否已经全部获取完成
+    bool initial_pose_complete_{false};
+
+    // active 后是否允许执行控制命令
+    bool control_enabled_{false};
+
+    // 本臂目标电机 ID 列表
+    std::vector<uint32_t> expected_motor_ids_;
+
+    // 每个目标电机是否已收到至少一次有效反馈
+    std::map<uint32_t, bool> motor_ready_map_;
+
+    // 通信故障停机相关状态
+    bool communication_lost_latched_{false};
+    bool fault_stop_requested_{false};
+    bool fault_stop_on_comm_loss_{true};
 };
 
 }  // namespace uvms_hal_manipulator
