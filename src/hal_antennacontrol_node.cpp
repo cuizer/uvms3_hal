@@ -1,7 +1,12 @@
 #include <memory>
 #include <string>
-#include <chrono>
 #include <cstring>
+#include <vector>
+#include <algorithm>
+#include <iostream>
+#include <thread>
+#include <chrono>
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "std_msgs/msg/u_int8.hpp"
@@ -10,7 +15,6 @@
 #include "hal/msg/can_msg_in.hpp"
 #include "hal/msg/can_msg_out.hpp"
 
-using namespace std::chrono_literals;
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 class HalAntennaControlNode : public rclcpp_lifecycle::LifecycleNode {
@@ -19,16 +23,14 @@ public:
     : rclcpp_lifecycle::LifecycleNode(node_name) {}
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &) override {
-        RCLCPP_INFO(get_logger(), "配置天线节点。模式：自动状态监测 + 手动逻辑控制。");
-        is_moving_ = false;
-        
-        // 订阅与发布初始化
+        std::cout << "[系统] 配置完成：天线控制复合模式 (电机ID: 0x141)" << std::endl;
+
         antenna_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
-            "hal_antennacontrol_srv", 10,
+            "/hal_antennacontrol_srv", 10,
             std::bind(&HalAntennaControlNode::antenna_callback, this, std::placeholders::_1));
-        
+
         canin_sub_ = this->create_subscription<hal::msg::CanMsgIn>(
-            "/hal/canin", 10, 
+            "/hal/canin", 10,
             std::bind(&HalAntennaControlNode::canin_callback, this, std::placeholders::_1));
 
         status_pub_ = this->create_publisher<hal::msg::HalAntenna>("/hal/antenna", 10);
@@ -41,141 +43,111 @@ public:
         rclcpp_lifecycle::LifecycleNode::on_activate(state);
         status_pub_->on_activate();
         canout_pub_->on_activate();
-
-        // 激活即开启定时器：负责状态轮询和限位检查
-        RCLCPP_INFO(get_logger(), "节点已激活，开始自动轮询硬件状态...");
-        timer_ = this->create_wall_timer(100ms, std::bind(&HalAntennaControlNode::control_loop, this));
+        std::cout << "[系统] 节点已激活。指令触发将自动执行 [解锁+使能+运动] 序列。" << std::endl;
         return CallbackReturn::SUCCESS;
     }
 
     CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override {
-        rclcpp_lifecycle::LifecycleNode::on_deactivate(state);
-        stop_all(); // 停用时安全关闭
+        send_can_cmd(0x81, 0x00); // 停止电机
         status_pub_->on_deactivate();
         canout_pub_->on_deactivate();
-        timer_.reset();
+        rclcpp_lifecycle::LifecycleNode::on_deactivate(state);
         return CallbackReturn::SUCCESS;
     }
 
 private:
-    // 物理参数
-    const double POS_DOWN_LIMIT = 0.0;         
-    const double POS_UP_LIMIT = -125000.0;     
-    const uint16_t MOTOR_RUN_SPEED = 8000;     
+    // --- 核心参数配置 ---
+    const uint16_t MOTOR_RUN_SPEED = 1800;    // 速度限制：1800 dps
+    const int32_t TARGET_UP = -12500000;     // 上升目标 LSB (-1250.00度)
+    const int32_t TARGET_DOWN = 0;           // 下降目标 LSB (0.00度)
 
-    // 运行状态变量
-    double current_total_angle_ = 0.0; 
-    uint8_t current_run_status_ = 0;
-    uint8_t current_brake_status_ = 0xFF; // 初始设为未知
-    uint8_t query_cnt_ = 0; 
-    int moving_dir_ = 0;
-    bool is_moving_ = false;
-
-    // 手动指令处理
     void antenna_callback(const std_msgs::msg::UInt8::SharedPtr msg) {
+        std::cout << "\n[操作] 收到请求编号: " << (int)msg->data << std::endl;
         switch (msg->data) {
-            case 0: // 上升
-                if (current_brake_status_ == 0x01) {
-                    moving_dir_ = -1;
-                    run_motor(static_cast<int32_t>(POS_UP_LIMIT * 100));
-                    RCLCPP_INFO(get_logger(), "指令：执行上升动作");
-                } else {
-                    RCLCPP_ERROR(get_logger(), "拒绝动作：抱闸尚未解锁！请先发送 2 解锁。");
-                }
+            case 0: // 复合上升序列
+                std::cout << ">> 启动上升序列：解锁 -> 使能 -> 运动至 " << TARGET_UP << std::endl;
+                send_can_cmd(0x8C, 0x01); // 1. 释放抱闸
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                send_can_cmd(0x88, 0x00); // 2. 电机使能
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                run_motor(TARGET_UP);     // 3. 位置控制
                 break;
-            case 1: // 下降
-                if (current_brake_status_ == 0x01) {
-                    moving_dir_ = 1;
-                    run_motor(static_cast<int32_t>(POS_DOWN_LIMIT * 100));
-                    RCLCPP_INFO(get_logger(), "指令：执行下降动作");
-                } else {
-                    RCLCPP_ERROR(get_logger(), "拒绝动作：抱闸尚未解锁！请先发送 2 解锁。");
-                }
-                break;
-            case 2: // 手动解锁
-                RCLCPP_INFO(get_logger(), "指令：发送解锁指令 (0x8C 01)");
+
+            case 1: // 复合下降序列
+                std::cout << ">> 启动下降序列：解锁 -> 使能 -> 运动至 " << TARGET_DOWN << std::endl;
                 send_can_cmd(0x8C, 0x01);
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                send_can_cmd(0x88, 0x00);
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                run_motor(TARGET_DOWN);
                 break;
-            case 3: // 手动加锁
-                RCLCPP_INFO(get_logger(), "指令：发送加锁指令 (0x8C 00)");
-                send_can_cmd(0x8C, 0x00);
-                break;
-            case 4: // 停止电机
-                RCLCPP_INFO(get_logger(), "指令：停止旋转");
-                stop_motor_only();
-                break;
+
+            case 2: send_can_cmd(0x8C, 0x01); break; // 仅手动解锁
+            case 3: send_can_cmd(0x8C, 0x00); break; // 仅手动锁定
+            case 4: send_can_cmd(0x81, 0x00); break; // 仅紧急停止
+            case 5: send_can_cmd(0x8C, 0x10); break; // 仅查询抱闸
+            case 6: send_can_cmd(0x92, 0x00); break; // 仅查询位置
         }
     }
 
-    // 定时器：自动检查状态 + 限位保护
-    void control_loop() {
-        // 1. 限位安全检查
-        if (is_moving_) {
-            bool hit_up = (moving_dir_ == -1 && current_total_angle_ <= POS_UP_LIMIT);
-            bool hit_down = (moving_dir_ == 1 && current_total_angle_ >= POS_DOWN_LIMIT);
-            if (hit_up || hit_down) {
-                RCLCPP_WARN(get_logger(), "软限位触发，自动停止旋转。");
-                stop_motor_only();
-            }
-        }
-
-        // 2. 自动状态轮询 (分步查询以防总线拥堵)
-        if (query_cnt_ == 0)      { send_can_cmd(0x92, 0x00); query_cnt_ = 1; } // 查询角度
-        else if (query_cnt_ == 1) { send_can_cmd(0x9C, 0x00); query_cnt_ = 2; } // 查询速度/状态
-        else                      { send_can_cmd(0x8C, 0x10); query_cnt_ = 0; } // 查询抱闸状态
-    }
-
-    // CAN 回传解析
     void canin_callback(const hal::msg::CanMsgIn::SharedPtr msg) {
-        if (msg->id == 0x184) {
-            if (msg->data[0] == 0x92) { // 角度解析
+        // 解析 1 号电机反馈 (0x180 + ID1 = 0x181)
+        if (msg->id == 0x181) {
+            // 解析多圈角度反馈 (0x92)
+            if (msg->data[0] == 0x92) {
                 uint64_t raw = 0;
-                for(int i = 0; i < 7; ++i) raw |= (static_cast<uint64_t>(msg->data[i+1]) << (8 * i));
+                for (int i = 0; i < 7; ++i) {
+                    raw |= (static_cast<uint64_t>(msg->data[i + 1]) << (8 * i));
+                }
+                // 56位有符号数符号扩展
                 if (raw & (1ULL << 55)) raw |= 0xFF00000000000000ULL;
-                current_total_angle_ = static_cast<double>(static_cast<int64_t>(raw)) / 100.0;
+                int64_t motorAngle = static_cast<int64_t>(raw);
+                double degree = motorAngle / 100.0;
+                std::cout << "[反馈] 当前多圈位置: " << degree << " 度" << std::endl;
             }
-            else if (msg->data[0] == 0x9C) { // 速度解析
-                int16_t speed = msg->data[4] | (msg->data[5] << 8);
-                current_run_status_ = (speed == 0) ? 0x00 : 0x01;
-                if (current_run_status_ == 0x00) is_moving_ = false;
-            }
-            else if (msg->data[0] == 0x8C) { // 抱闸解析
-                current_brake_status_ = msg->data[1]; 
-            }
+            // 解析抱闸状态反馈 (0x8C)
+            else if (msg->data[0] == 0x8C) {
+                uint8_t brake = msg->data[1];
+                std::cout << "[反馈] 抱闸状态: " << (brake == 0x01 ? "已释放(通电)" : "已锁定(断电)") << std::endl;
 
-            // 发布到 ROS 2 供上位机/你观察
-            hal::msg::HalAntenna s_msg;
-            s_msg.brake_status = current_brake_status_;
-            s_msg.run_status   = current_run_status_;
-            s_msg.total_angle  = current_total_angle_;
-            status_pub_->publish(s_msg);
+                hal::msg::HalAntenna s_msg;
+                s_msg.brake_status = brake;
+                status_pub_->publish(s_msg);
+            }
         }
     }
 
-    // 辅助函数
-    void send_can_cmd(uint8_t b0, uint8_t b1, uint8_t b2=0, uint8_t b3=0, uint8_t b4=0, uint8_t b5=0, uint8_t b6=0, uint8_t b7=0) {
-        hal::msg::CanMsgOut can_msg;
-        can_msg.id = 0x144; can_msg.dlc = 8;
-        can_msg.data[0]=b0; can_msg.data[1]=b1; can_msg.data[2]=b2; can_msg.data[3]=b3;
-        can_msg.data[4]=b4; can_msg.data[5]=b5; can_msg.data[6]=b6; can_msg.data[7]=b7;
-        canout_pub_->publish(can_msg);
+    // 发送基础 CAN 指令
+    void send_can_cmd(uint8_t b0, uint8_t b1) {
+        hal::msg::CanMsgOut msg;
+        msg.id = 0x141; // ID 141
+        msg.dlc = 8;
+        std::fill(msg.data.begin(), msg.data.end(), 0x00);
+        msg.data[0] = b0; msg.data[1] = b1;
+        canout_pub_->publish(msg);
+        std::cout << "[CAN发送] ID: 0x141 | 指令: 0x" << std::hex << (int)b0 << " 参数: 0x" << (int)b1 << std::dec << std::endl;
     }
 
-    void run_motor(int32_t target) { 
-        send_can_cmd(0xA4, 0x00, MOTOR_RUN_SPEED & 0xFF, (MOTOR_RUN_SPEED >> 8) & 0xFF, 
-                     target & 0xFF, (target >> 8) & 0xFF, (target >> 16) & 0xFF, (target >> 24) & 0xFF);
-        is_moving_ = true; 
+    // 发送 A4 多圈位置控制指令
+    void run_motor(int32_t target) {
+        hal::msg::CanMsgOut msg;
+        msg.id = 0x141; msg.dlc = 8;
+        std::fill(msg.data.begin(), msg.data.end(), 0x00);
+        msg.data[0] = 0xA4;
+        msg.data[2] = MOTOR_RUN_SPEED & 0xFF; // 速度限制低字节
+        msg.data[3] = (MOTOR_RUN_SPEED >> 8) & 0xFF; // 速度限制高字节
+        msg.data[4] = target & 0xFF;
+        msg.data[5] = (target >> 8) & 0xFF;
+        msg.data[6] = (target >> 16) & 0xFF;
+        msg.data[7] = (target >> 24) & 0xFF;
+        canout_pub_->publish(msg);
+        std::cout << "[CAN发送] ID: 0x141 | 目标位置: " << target << " LSB" << std::endl;
     }
-    
-    void stop_motor_only() { send_can_cmd(0x81, 0x00); is_moving_ = false; }
-    void stop_all() { send_can_cmd(0x81, 0x00); send_can_cmd(0x8C, 0x00); is_moving_ = false; }
 
-    // 成员变量
     rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr antenna_sub_;
     rclcpp::Subscription<hal::msg::CanMsgIn>::SharedPtr canin_sub_;
     rclcpp_lifecycle::LifecyclePublisher<hal::msg::HalAntenna>::SharedPtr status_pub_;
     rclcpp_lifecycle::LifecyclePublisher<hal::msg::CanMsgOut>::SharedPtr canout_pub_;
-    rclcpp::TimerBase::SharedPtr timer_;
 };
 
 int main(int argc, char * argv[]) {
@@ -185,3 +157,4 @@ int main(int argc, char * argv[]) {
     rclcpp::shutdown();
     return 0;
 }
+
