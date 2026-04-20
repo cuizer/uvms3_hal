@@ -204,8 +204,8 @@ private:
             int16_t turns = static_cast<int16_t>((payload[15] << 8) | payload[14]);
 
             std::lock_guard<std::mutex> lock(data_cache_mutex_);
-            if (servo_id >= 1 && servo_id <= 4) {
-                int i = servo_id - 1;
+            if (servo_id >= 0 && servo_id <= 3) {
+                int i = servo_id;
                 cached_tail_msg_.voltage[i]     = voltage;
                 cached_tail_msg_.current[i]     = current;
                 cached_tail_msg_.power[i]       = power;
@@ -213,8 +213,8 @@ private:
                 cached_tail_msg_.status[i]      = status;
                 cached_tail_msg_.position[i]    = angle;
                 cached_tail_msg_.turns[i]       = turns;
-            } else if (servo_id >= 5 && servo_id <= 6) {
-                int i = servo_id - 5;
+            } else if (servo_id >= 4 && servo_id <= 5) {
+                int i = servo_id - 4;
                 cached_wing_msg_.voltage[i]     = voltage;
                 cached_wing_msg_.current[i]     = current;
                 cached_wing_msg_.power[i]       = power;
@@ -233,7 +233,7 @@ private:
         if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) return;
 
         // 向所有 6 个舵机发送 0x16 状态请求
-        for (uint8_t id = 1; id <= 6; ++id) {
+        for (uint8_t id = 0; id <= 5; ++id) {
             hardware_serial_write(pack_command(0x16, {id}));
             std::this_thread::sleep_for(std::chrono::milliseconds(2)); // 避免总线拥堵
         }
@@ -264,7 +264,7 @@ private:
 
     void send_stop_command_to_all(bool lock) {
         uint8_t val = lock ? 0x01 : 0x00;
-        for (uint8_t id = 1; id <= 6; ++id) hardware_serial_write(pack_command(0x18, {id, val}));
+        for (uint8_t id = 0; id <= 5; ++id) hardware_serial_write(pack_command(0x18, {id, val}));
     }
 
     void tail_cmd_callback(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
@@ -296,7 +296,7 @@ private:
 
     void execute_test_sequence(bool is_tail) {
         is_testing_ = true;
-        auto set_angles = [&](double a){ if(is_tail) for(int i=1;i<=4;++i) send_angle_command(i,a); else for(int i=5;i<=6;++i) send_angle_command(i,a); };
+        auto set_angles = [&](double a){ if(is_tail) for(int i=0;i<=3;++i) send_angle_command(i,a); else for(int i=4;i<=5;++i) send_angle_command(i,a); };
         set_angles(3.0);  std::this_thread::sleep_for(std::chrono::seconds(2));
         set_angles(-3.0); std::this_thread::sleep_for(std::chrono::seconds(2));
         set_angles(0.0);  is_testing_ = false;
@@ -305,7 +305,7 @@ private:
 
     void hardware_api_init() {
         // 如果你不用真实硬件，用虚拟串口软件模拟（推荐先用这个方案）：
-        std::string port_name = "/dev/pts/3";
+        std::string port_name = "/dev/ttyTHS1";
         serial_fd_ = open(port_name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
         if (serial_fd_ < 0) return;
         struct termios opt; tcgetattr(serial_fd_, &opt);
@@ -316,8 +316,8 @@ private:
         tcflush(serial_fd_, TCIFLUSH); tcsetattr(serial_fd_, TCSANOW, &opt);
     }
 
-    void set_tail_servos_hardware(const std::vector<double>& a) { for(size_t i=0; i<a.size(); ++i) send_angle_command(i+1, a[i]); }
-    void set_wing_servos_hardware(const std::vector<double>& a) { for(size_t i=0; i<a.size(); ++i) send_angle_command(i+5, a[i]); }
+    void set_tail_servos_hardware(const std::vector<double>& a) { for(size_t i=0; i<a.size(); ++i) send_angle_command(i, a[i]); }
+    void set_wing_servos_hardware(const std::vector<double>& a) { for(size_t i=0; i<a.size(); ++i) send_angle_command(i+4, a[i]); }
 };
 
 int main(int argc, char ** argv) {
