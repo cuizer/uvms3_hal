@@ -31,22 +31,16 @@ int setup_native_uart(const std::string& port_name, speed_t baud_rate) {
         return -1;
     }
 
+    // 【关键修改 1】强制将串口设为完全透传模式 (Raw Mode)
+    // 这一步会关闭底层的 ICRNL、ECHO、ICANON 等所有自动转换机制，确保读到的数据原汁原味
+    cfmakeraw(&tty);
+
     cfsetospeed(&tty, baud_rate);
     cfsetispeed(&tty, baud_rate);
 
-    tty.c_cflag &= ~CSIZE;   
-    tty.c_cflag |= CS8;      
-    tty.c_cflag &= ~PARENB;  
-    tty.c_cflag &= ~CSTOPB;  
+    tty.c_cflag |= CREAD | CLOCAL; // 开启接收并忽略控制线
 
-    tty.c_cflag &= ~CRTSCTS;                
-    tty.c_iflag &= ~(IXON | IXOFF | IXANY); 
-
-    tty.c_cflag |= CREAD | CLOCAL;
-
-    tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-    tty.c_oflag &= ~OPOST;
-
+    // 设置非阻塞读取
     tty.c_cc[VMIN]  = 0;
     tty.c_cc[VTIME] = 1;
 
@@ -70,18 +64,14 @@ public:
     HalDvlNode(const std::string & node_name)
     : rclcpp_lifecycle::LifecycleNode(node_name)
     {
-        // 声明参数：端口和波特率
         this->declare_parameter<std::string>("port_name", "/dev/ttyUSB0");
         this->declare_parameter<int>("baud_rate", 115200);
     }
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &) override {
         dvl_pub_ = this->create_publisher<hal::msg::HalDvlMsg>("hal_dvl_msg", 10);
-        
-        // 创建 50Hz 的定时发布器
         publish_timer_ = this->create_wall_timer(
             20ms, std::bind(&HalDvlNode::publish_timer_callback, this));
-
         return CallbackReturn::SUCCESS;
     }
 
@@ -144,9 +134,16 @@ private:
     }
 
     void parse_and_cache(const std::string& data, int64_t capture_time_ns) {
-        // 假设报文格式为: $DVLHDR,y,1.25,-0.15,0.05*Cs
-        size_t star_pos = data.find('*');
-        std::string data_body = (star_pos != std::string::npos) ? data.substr(0, star_pos) : data;
+        // 【关键修改 3】找到报文真正的起始位，剔除前方的乱码字节
+        size_t start_idx = data.find("wrx");
+        if (start_idx == std::string::npos) {
+            start_idx = data.find("wrz");
+        }
+        if (start_idx == std::string::npos) return;
+
+        std::string clean_data = data.substr(start_idx);
+        size_t star_pos = clean_data.find('*');
+        std::string data_body = (star_pos != std::string::npos) ? clean_data.substr(0, star_pos) : clean_data;
         
         std::vector<std::string> tokens;
         std::stringstream ss(data_body);
@@ -156,28 +153,52 @@ private:
             tokens.push_back(token);
         }
 
-        // 确保字段数足够（至少包含头、状态、vx, vy, vz）
-        if (tokens.size() >= 5) {
-            std::lock_guard<std::mutex> lock(msg_mutex_);
-            cached_msg_.timestamp = capture_time_ns;
+        if (tokens.empty()) return;
 
-            // 检查失锁状态（tokens[1] 为状态位 'y' 表示有效，'n' 表示失锁）
-            if (tokens[1] == "y" || tokens[1] == "Y") {
-                try {
-                    cached_msg_.velocity_x = std::stof(tokens[2]);
-                    cached_msg_.velocity_y = std::stof(tokens[3]);
-                    cached_msg_.velocity_z = std::stof(tokens[4]);
-                } catch (const std::exception& e) {
-                    RCLCPP_DEBUG(this->get_logger(), "DVL 速度转换异常: %s", e.what());
+        bool is_valid = false;
+        float vx = 0.0f, vy = 0.0f, vz = 0.0f;
+
+        try {
+            if (tokens[0] == "wrx" && tokens.size() >= 8) {
+                std::string valid_str = tokens[7];
+                valid_str.erase(valid_str.find_last_not_of(" \n\r\t") + 1); 
+                if (valid_str == "y" || valid_str == "Y") {
+                    is_valid = true;
+                    vx = std::stof(tokens[2]);
+                    vy = std::stof(tokens[3]);
+                    vz = std::stof(tokens[4]);
+                }
+            } 
+            else if (tokens[0] == "wrz" && tokens.size() >= 5) {
+                std::string valid_str = tokens[4];
+                valid_str.erase(valid_str.find_last_not_of(" \n\r\t") + 1);
+                if (valid_str == "y" || valid_str == "Y") {
+                    is_valid = true;
+                    vx = std::stof(tokens[1]);
+                    vy = std::stof(tokens[2]);
+                    vz = std::stof(tokens[3]);
                 }
             } else {
-                // 失锁保护：强制速度归零
-                RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, 
-                    "DVL 底面失锁！已强制速度归零以保护系统");
-                cached_msg_.velocity_x = 0.0f;
-                cached_msg_.velocity_y = 0.0f;
-                cached_msg_.velocity_z = 0.0f;
+                return; 
             }
+        } catch (const std::exception& e) {
+            RCLCPP_DEBUG(this->get_logger(), "DVL 数据解析转换异常: %s", e.what());
+            return;
+        }
+
+        std::lock_guard<std::mutex> lock(msg_mutex_);
+        cached_msg_.timestamp = capture_time_ns;
+
+        if (is_valid) {
+            cached_msg_.velocity_x = vx;
+            cached_msg_.velocity_y = vy;
+            cached_msg_.velocity_z = vz;
+        } else {
+            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, 
+                "DVL 底面失锁！已强制速度归零以保护系统");
+            cached_msg_.velocity_x = 0.0f;
+            cached_msg_.velocity_y = 0.0f;
+            cached_msg_.velocity_z = 0.0f;
         }
     }
 
@@ -191,14 +212,14 @@ private:
                     std::string port = this->get_parameter("port_name").as_string();
                     int baud_int = this->get_parameter("baud_rate").as_int();
                     speed_t baud_rate = (baud_int == 115200) ? B115200 : 
-                                        (baud_int == 460800) ? B460800 : B9600; // 简化的波特率映射
+                                        (baud_int == 460800) ? B460800 : B9600; 
 
                     serial_fd_ = setup_native_uart(port, baud_rate);
                     if (serial_fd_ < 0) {
                         std::this_thread::sleep_for(1s);
                         continue;
                     }
-                    RCLCPP_INFO(this->get_logger(), "DVL 原生串口已打开: %s", port.c_str());
+                    //RCLCPP_INFO(this->get_logger(), "DVL 原生串口已打开: %s", port.c_str());
                 }
 
                 fd_set read_fds;
@@ -228,12 +249,19 @@ private:
                         size_t pos = 0;
                         size_t processed_pos = 0;
                         
-                        while ((pos = buffer.find("\r\n", processed_pos)) != std::string::npos) {
+                        // 【关键修改 2】仅依据 '\n' 拆分字符串，提升鲁棒性
+                        while ((pos = buffer.find('\n', processed_pos)) != std::string::npos) {
                             std::string line = buffer.substr(processed_pos, pos - processed_pos);
-                            processed_pos = pos + 2; 
+                            processed_pos = pos + 1; 
+
+                            // 如果末尾带有 '\r'，将其弹出剥离
+                            if (!line.empty() && line.back() == '\r') {
+                                line.pop_back();
+                            }
                             
-                            // 注意：如果您直连 WaterLinked DVL，这里的协议头可能需要改成 ":BI"
-                            if (line.rfind("$DVLHDR", 0) == 0) {
+                            // 放宽要求，不再强求下标0
+                            if (line.find("wrx") != std::string::npos || line.find("wrz") != std::string::npos) {
+                                RCLCPP_INFO(this->get_logger(), "收到原始合法串口数据 -> %s", line.c_str());
                                 parse_and_cache(line, capture_time_ns); 
                             }
                         }
