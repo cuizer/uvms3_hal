@@ -37,9 +37,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/HalThrustercontrolSrv.srv"
   "msg/HalBattery.msg"
   "srv/HalBatteryControlSrv.srv"
-  "msg/HalInertialnaviMsg.msg"
-  "msg/HalDvlMsg.msg"
-  "msg/HalDepthsensorMsg.msg"
+  "msg/HalInertialnavi.msg"
+  "msg/HalDvl.msg"
+  "msg/HalDepthsensor.msg"
   "msg/HalAntenna.msg"
   "msg/CanMsgIn.msg"
   "msg/CanMsgOut.msg"
@@ -140,6 +140,14 @@ ament_target_dependencies(hal_inertialnavi_node
   std_msgs
 )
 
+# 通信节点
+add_executable(bsp_comm_node src/bsp_comm_node.cpp)
+ament_target_dependencies(bsp_comm_node
+  rclcpp
+  rclcpp_lifecycle
+  std_msgs
+)
+
 # 5. 链接自定义消息
 rosidl_target_interfaces(hal_battery_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 rosidl_target_interfaces(hal_antennacontrol_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
@@ -149,6 +157,7 @@ rosidl_target_interfaces(hal_thruster_node ${PROJECT_NAME} "rosidl_typesupport_c
 rosidl_target_interfaces(hal_depthsensor_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 rosidl_target_interfaces(hal_dvl_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 rosidl_target_interfaces(hal_inertialnavi_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
+rosidl_target_interfaces(bsp_comm_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 # 如果机械臂节点后续需要使用本包自定义 msg/srv，可启用下面这行
 # rosidl_target_interfaces(hal_manipulator_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
@@ -165,6 +174,7 @@ install(TARGETS
   hal_depthsensor_node
   hal_dvl_node
   hal_inertialnavi_node
+  bsp_comm_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

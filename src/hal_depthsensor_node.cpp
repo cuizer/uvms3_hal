@@ -1,6 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
-#include "hal/msg/hal_depthsensor_msg.hpp" 
+#include "hal/msg/hal_depthsensor.hpp" 
 #include <std_msgs/msg/string.hpp>   // 【新增】用于发布连接状态
 #include <cmath> 
 #include <algorithm> // 包含 std::max
@@ -80,7 +80,7 @@ public:
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &) override {
         RCLCPP_INFO(get_logger(), "配置中... 初始化水深传感器发布者 (固定 50Hz)。");
-        depth_pub_ = this->create_publisher<hal::msg::HalDepthsensorMsg>("hal_depthsensor_msg", 10);
+        depth_pub_ = this->create_publisher<hal::msg::HalDepthsensor>("/hal/depthsenor", 10);
         
         // 【新增】初始化状态发布者
         status_pub_ = this->create_publisher<std_msgs::msg::String>("hal_depthsensor_status", 10);
@@ -151,13 +151,13 @@ public:
     }
 
 private:
-    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<hal::msg::HalDepthsensorMsg>> depth_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<hal::msg::HalDepthsensor>> depth_pub_;
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>> status_pub_; // 【新增】状态发布者指针
     
     rclcpp::TimerBase::SharedPtr publish_timer_;
     rclcpp::TimerBase::SharedPtr watchdog_timer_; 
 
-    hal::msg::HalDepthsensorMsg cached_msg_;
+    hal::msg::HalDepthsensor cached_msg_;
     std::mutex msg_mutex_;
 
     int can_socket_ = -1;
@@ -237,7 +237,7 @@ private:
 
     void publish_timer_callback() {
         if (depth_pub_->is_activated()) {
-            hal::msg::HalDepthsensorMsg msg_to_publish;
+            hal::msg::HalDepthsensor msg_to_publish;
             {
                 std::lock_guard<std::mutex> lock(msg_mutex_);
                 msg_to_publish = cached_msg_;

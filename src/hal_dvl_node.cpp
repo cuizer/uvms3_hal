@@ -1,6 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
-#include "hal/msg/hal_dvl_msg.hpp" 
+#include "hal/msg/hal_dvl.hpp" 
 #include <thread>
 #include <mutex>
 #include <chrono>
@@ -69,7 +69,7 @@ public:
     }
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &) override {
-        dvl_pub_ = this->create_publisher<hal::msg::HalDvlMsg>("hal_dvl_msg", 10);
+        dvl_pub_ = this->create_publisher<hal::msg::HalDvl>("/hal/dvl", 10);
         publish_timer_ = this->create_wall_timer(
             20ms, std::bind(&HalDvlNode::publish_timer_callback, this));
         return CallbackReturn::SUCCESS;
@@ -112,10 +112,10 @@ public:
     }
 
 private:
-    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<hal::msg::HalDvlMsg>> dvl_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<hal::msg::HalDvl>> dvl_pub_;
     rclcpp::TimerBase::SharedPtr publish_timer_;
 
-    hal::msg::HalDvlMsg cached_msg_;
+    hal::msg::HalDvl cached_msg_;
     std::mutex msg_mutex_;
 
     int serial_fd_ = -1;
@@ -124,7 +124,7 @@ private:
 
     void publish_timer_callback() {
         if (dvl_pub_->is_activated()) {
-            hal::msg::HalDvlMsg msg_to_publish;
+            hal::msg::HalDvl msg_to_publish;
             {
                 std::lock_guard<std::mutex> lock(msg_mutex_);
                 msg_to_publish = cached_msg_;
