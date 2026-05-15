@@ -77,7 +77,7 @@ public:
             // 5. 初始化定时器 (绑定到 timer_cb_group_)
             // ==========================================
             timer_ = this->create_wall_timer(
-                std::chrono::milliseconds(20), // 50Hz 轮询数据并发布
+                std::chrono::milliseconds(4), // 改为4ms
                 std::bind(&HalServoNode::timer_publish_status_callback, this),
                 timer_cb_group_); // <--- 传入 timer_cb_group_
         
@@ -133,6 +133,9 @@ public:
 private:
     double max_angle_;
     std::atomic<bool> is_testing_{false};
+
+    // ⬇️ 新增：用于记录当前轮询到的舵机 ID (0~5)
+    uint8_t current_poll_id_ = 0;
 
     // 串口与线程
     int serial_fd_ = -1;
@@ -196,6 +199,8 @@ private:
         while (keep_reading_) {
             uint8_t byte;
             if (read(serial_fd_, &byte, 1) > 0) {
+               
+
                 switch(state) {
                     case 0: if (byte == 0x05) state = 1; break; // 寻找响应包头
                     case 1: if (byte == 0x1C) state = 2; else state = (byte == 0x05) ? 1 : 0; break;
@@ -220,68 +225,46 @@ private:
     }
 
     void process_servo_response(uint8_t cmd_id, const std::vector<uint8_t>& payload) {
-        if (cmd_id == 0x16 && payload.size() >= 16) {
+        if (cmd_id == 0x0A && payload.size() >= 3) {
             uint8_t servo_id = payload[0];
-            // 📖 严格按照 Fashion Star 官方小端序解析
-            uint16_t voltage = (payload[2] << 8) | payload[1];
-            uint16_t current = (payload[4] << 8) | payload[3];
-            uint16_t power   = (payload[6] << 8) | payload[5];
-            uint16_t adc_temp = (payload[8] << 8) | payload[7];
-            uint8_t  status  = payload[9];
-            
-            // 角度反馈 (4字节, 0.1°/单位, 小端序)
-            uint32_t pos_raw = (payload[13] << 24) | (payload[12] << 16) | (payload[11] << 8) | payload[10];
+            // 解析角度 (小端序 int16, 单位 0.1度)
+            int16_t pos_raw = static_cast<int16_t>((payload[2] << 8) | payload[1]);
             float angle = static_cast<float>(pos_raw) / 10.0f;
-
-            // 圈数反馈 (2字节, 有符号 int16, 小端序)
-            int16_t turns = static_cast<int16_t>((payload[15] << 8) | payload[14]);
-
+    
             std::lock_guard<std::mutex> lock(data_cache_mutex_);
             if (servo_id <= 3) {
-                int i = servo_id;
-                cached_tail_msg_.voltage[i]     = voltage;
-                cached_tail_msg_.current[i]     = current;
-                cached_tail_msg_.power[i]       = power;
-                cached_tail_msg_.temperature[i] = adc_temp;
-                cached_tail_msg_.status[i]      = status;
-                cached_tail_msg_.position[i]    = angle;
-                cached_tail_msg_.turns[i]       = turns;
+                cached_tail_msg_.position[servo_id] = angle;
             } else if (servo_id >= 4 && servo_id <= 5) {
-                int i = servo_id - 4;
-                cached_wing_msg_.voltage[i]     = voltage;
-                cached_wing_msg_.current[i]     = current;
-                cached_wing_msg_.power[i]       = power;
-                cached_wing_msg_.temperature[i] = adc_temp;
-                cached_wing_msg_.status[i]      = status;
-                cached_wing_msg_.position[i]    = angle;
-                cached_wing_msg_.turns[i]       = turns;
+                cached_wing_msg_.position[servo_id - 4] = angle;
             }
         }
     }
 
     // ==========================================
-    // ⏱️ 定时器：轮询硬件并发布 Topic
+    // ⏱️ 定时器：轮询硬件并发布 Topic (优化版)
     // ==========================================
     void timer_publish_status_callback() {
         if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) return;
 
-        // 向所有 6 个舵机发送 0x16 状态请求
-        for (uint8_t id = 0; id <= 5; ++id) {
-            hardware_serial_write(pack_command(0x16, {id}));
-            std::this_thread::sleep_for(std::chrono::milliseconds(2)); // 避免总线拥堵
-        }
+        // 1. 仅向当前的 1 个舵机发送状态请求
+        hardware_serial_write(pack_command(0x0A, {current_poll_id_}));
 
-        int64_t current_timestamp = this->get_clock()->now().nanoseconds();
-        {
-            std::lock_guard<std::mutex> lock(data_cache_mutex_);
-            cached_tail_msg_.timestamp = current_timestamp;
-            pub_tail_status_->publish(cached_tail_msg_);
+        // 2. 更新轮询 ID，在 0 ~ 5 之间循环
+        current_poll_id_ = (current_poll_id_ + 1) % 6;
 
-            cached_wing_msg_.timestamp = current_timestamp;
-            pub_wing_status_->publish(cached_wing_msg_);
+        // 3. 降低发布频率：当一轮查询结束时（current_poll_id_ 回到 0），打包发布一次 Topic
+        if (current_poll_id_ == 0) {
+            int64_t current_timestamp = this->get_clock()->now().nanoseconds();
+            {
+                std::lock_guard<std::mutex> lock(data_cache_mutex_);
+                cached_tail_msg_.timestamp = current_timestamp;
+                pub_tail_status_->publish(cached_tail_msg_);
+
+                cached_wing_msg_.timestamp = current_timestamp;
+                pub_wing_status_->publish(cached_wing_msg_);
+            }
         }
     }
-
     // ==========================================
     // 🎮 控制逻辑 (Service & CMD)
     // ==========================================
@@ -377,9 +360,9 @@ private:
         opt.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); // 原始输入模式
         opt.c_oflag &= ~OPOST;                  // 原始输出模式
     
-        // 3. 设置为阻塞读取模式：只要有 1 个字节进来就触发 read 返回，没有就等着，不占 CPU
-        opt.c_cc[VMIN] = 1;  
-        opt.c_cc[VTIME] = 0; 
+        // 3. 设置为阻塞读取模式
+        opt.c_cc[VMIN] = 0;  // 即使没有数据也可以返回
+        opt.c_cc[VTIME] = 1; // 超时时间 0.1 秒 (100ms)。如果100ms没数据，read返回0
     
         tcflush(serial_fd_, TCIFLUSH); 
         tcsetattr(serial_fd_, TCSANOW, &opt);
