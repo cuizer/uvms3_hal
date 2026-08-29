@@ -303,20 +303,20 @@ string message
 
 ```bash
 # 监控CAN总线流量
-candump can0
+candump can3
 
 # 过滤特定CAN ID
-candump can0,100:7FF
+candump can3,100:7FF
 ```
 
 ### 2. 使用cansend发送测试帧
 
 ```bash
 # 发送打开12V电池的指令
-cansend can0 100#0A09000100000000
+cansend can3 100#0A09000100000000
 
 # 发送关闭24V电池的指令
-cansend can0 100#0A09010000000000
+cansend can3 100#0A09010000000000
 ```
 
 ### 3. 使用ROS2节点测试
@@ -416,190 +416,126 @@ sudo ip link set can1 up type can bitrate 250000
 
 ### F. 操作指南
 
-## 第一步：环境设置
+以下命令均以工作空间根目录为当前目录；文中的文件路径均为相对路径。运行前应已在当前终端加载本机 ROS 2 发行版环境。
 
-# 1. 进入工作空间
+#### 1. 编译并加载工作空间环境
 
-cd /home/epilogue/ros2\_ws
-
-# 2. 设置ROS2环境
-
-source /opt/ros/humble/setup.bash
-
-# 3. 设置工作空间环境
-
-source install/setup.bash
-
-## 第二步：编译
-
-# 1. 清理旧的编译文件（可选）
-
-cd /home/epilogue/ros2\_ws
-rm -rf build/ install/ log/
-
-# 2. 编译hal包
-
+```bash
 colcon build --packages-select hal
-
-# 3. 设置编译后的环境
-
 source install/setup.bash
 
-## 第三步：启动生命周期节点
 
-# 终端1：直接启动节点（模拟模式）
+colcon build --packages-select hal --cmake-args \
+  -Ddepthai_DIR=/opt/ros/humble/lib/x86_64-linux-gnu/cmake/depthai
+```
 
-source /home/epilogue/ros2\_ws/install/setup.bash
-ros2 run hal hal\_battery\_node --ros-args -p simulation\_mode:=true
+如需重新构建，可先删除相对目录 `build/`、`install/` 和 `log/`，再执行上述命令。
+
+#### 2. 手动配置并检查 CAN 接口
+
+节点固定绑定 `can3`，但不负责配置或启用该接口。真实硬件模式下，请在启动节点前由系统管理员将 `can3` 配置为 125 kbps：
+
+```bash
+sudo ip link set can3 down
+sudo ip link set can3 up type can bitrate 125000
+ip -details link show can3
+```
+
+若该命令失败，请先确认 AD10 已加载对应的 CAN 驱动且存在 `can3` 接口。节点仅能绑定已经存在且已启用的 SocketCAN 接口。
+
+使用 `candump` 观察节点发出的控制帧：
+
+```bash
+candump can3,100:7FF
+```
+
+#### 3. 启动、配置并激活节点
+
+在终端 1 启动真实硬件模式节点：
+
+```bash
+source install/setup.bash
 ros2 run hal hal_battery_node --ros-args -p simulation_mode:=false
+```
 
-ros2 run hal hal_battery_node --ros-args -p voltage_threshold:=-1.0 -p communication_timeout:=999999.0 -p simulation_mode:=false
-## 第四步：配置和激活节点
+在终端 2 加载相同工作空间环境，并执行生命周期转换：
 
-# 终端2：打开新终端
+```bash
+source install/setup.bash
+ros2 lifecycle get /hal_battery_node
+ros2 lifecycle set /hal_battery_node configure
+ros2 lifecycle set /hal_battery_node activate
+ros2 lifecycle get /hal_battery_node
+```
 
-source /home/epilogue/ros2\_ws/install/setup.bash
+节点处于 `active` 后，每 100 ms 执行一次 CAN 收发和状态发布。`simulation_mode:=true` 目前不产生模拟状态数据，仅用于跳过 CAN 初始化；验证通信和状态发布时应使用 `simulation_mode:=false`。
 
-source /home/nvidia/test_ws/install/setup.bash
+#### 4. 控制电池开关
 
-# 1. 查看节点状态
+通过 `/hal/batterycontrol` 服务更新节点保存的期望开关状态：
 
-ros2 lifecycle get /hal\_battery\_node
+| command | 操作 |
+| --- | --- |
+| 1 | 打开 12V |
+| 2 | 关闭 12V |
+| 3 | 打开 24V |
+| 4 | 关闭 24V |
+| 5 | 打开 72V |
+| 6 | 关闭 72V |
 
-# 2. 配置节点
+例如，打开 12V 电池：
 
-ros2 lifecycle set /hal\_battery\_node configure
-
-# 3. 激活节点
-
-ros2 lifecycle set /hal\_battery\_node activate
-
-# 4. 查看激活后的状态
-
-ros2 lifecycle get /hal\_battery\_node
-
-## 第五步：测试电池控制功能
-
-# 终端3：打开新终端
-
-source /home/epilogue/ros2\_ws/install/setup.bash
-
-# 打开12V电池
-
+```bash
+source install/setup.bash
 ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 1}"
 
-# 等待2秒
+```
 
-sleep 2
+服务返回成功仅表示节点已接受并保存该期望状态。节点不会在服务回调中立即发送 CAN 帧，而是在下一个 100 ms 定时周期开始，以 10 Hz 持续发送 CAN ID `0x100`：
 
-# 关闭12V电池
+```text
+Data[0] = 0x0A
+Data[1] = 0x09
+Data[2] = 12V 期望状态（0x00=关，0x01=开）
+Data[3] = 24V 期望状态（0x00=关，0x01=开）
+Data[4] = 72V 期望状态（0x00=关，0x01=开）
+Data[5..7] = 0x00
+```
 
-ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 2}"
+因此，首次打开各电池且其余电池保持关闭时，`candump` 中应分别看到：
 
-# 等待2秒
+```text
+# 打开 12V：100#0A09010000000000
+# 打开 24V：100#0A09000100000000
+# 打开 72V：100#0A09000001000000
+```
 
-sleep 2
+关闭某一路时，节点只修改对应状态位，其他两路维持其当前期望状态。例如，在只开启 12V 的状态下调用 `{command: 2}` 后，持续发送的帧变为 `100#0A09000000000000`。
 
-# 打开24V电池
+#### 5. 验证 BMS 与开关反馈
 
-ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 3}"
+在终端 3 订阅状态话题：
 
-# 等待2秒
-
-sleep 2
-
-# 关闭24V电池
-
-ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 4}"
-
-# 等待2秒
-
-sleep 2
-
-# 打开72V电池
-
-ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 5}"
-
-# 等待2秒
-
-sleep 2
-
-# 关闭72V电池
-
-ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 6}"
-
-# 等待2秒
-
-sleep 2
-
-## 第六步：监听电池状态
-
-# 终端4：打开新终端
-
-source /home/epilogue/ros2\_ws/install/setup.bash
-
-# 监听电池状态消息
-
+```bash
+source install/setup.bash
 ros2 topic echo /hal/battery
+```
 
-## 第七步：查看系统信息
+节点每 100 ms 发布一次 `hal/msg/HalBattery`。其中 48V 和 72V 的电压、电流、容量、循环次数和温度分别由对应 BMS 帧更新；`switch_state_12v`、`switch_state_24v` 和 `switch_state_72v` 仅由 CAN ID `0x726` 的 `Data[0]`、`Data[1]`、`Data[2]` 反馈更新，非零表示开启。
 
-# 终端5：打开新终端
+服务调用后的正确验证顺序为：确认服务响应成功，使用 `candump can3,100:7FF` 确认 `0x100` 帧的三个状态字节正确，再在 `/hal/battery` 中确认 `0x726` 反馈反映为对应的 `switch_state_*` 字段。未收到 `0x726` 时，话题中的开关状态不会因服务调用而自行改变。
 
-source /home/epilogue/ros2\_ws/install/setup.bash
+#### 6. 查询节点接口与参数
 
-# 1. 查看所有节点
-
+```bash
+source install/setup.bash
 ros2 node list
-
-# 2. 查看所有话题
-
-ros2 topic list
-
-# 3. 查看话题详细信息
-
 ros2 topic info /hal/battery
-
-ros2 topic echo /hal/battery
-
-# 4. 查看服务详细信息
-
 ros2 service info /hal/batterycontrol
-
-# 5. 查看消息类型定义
-
 ros2 interface show hal/msg/HalBattery
 ros2 interface show hal/srv/HalBatteryControlSrv
+ros2 param list /hal_battery_node
+ros2 param get /hal_battery_node simulation_mode
+```
 
-# 6. 查看节点参数
-
-ros2 param list /hal\_battery\_node
-ros2 param get /hal\_battery\_node simulation\_mode
-
-### 真实硬件测试
-
-colcon build --packages-select hal
-source install/setup.bash
-
-# 1. 配置CAN接口（需要sudo权限）
-sudo ip link set can0 down
-sudo ip link set can0 up type can bitrate 125000
-sudo ip link set can0 up
-
-# 2. 验证CAN接口
-
-ip link show can0
-
-# 3. 启动节点（真实模式）
-
-source install/setup.bash
-ros2 run hal hal\_battery\_node --ros-args -p simulation\_mode:=false
-
-# 4. 配置和激活节点
-
-ros2 lifecycle set /hal\_battery\_node configure
-ros2 lifecycle set /hal\_battery\_node activate
-
-# 5. 测试控制指令
-
-ros2 service call /hal/batterycontrol hal/srv/HalBatteryControlSrv "{command: 1}"
+当前实现还声明了 `voltage_threshold`、`current_threshold`、`temperature_threshold` 和 `communication_timeout` 参数，但尚未在控制或通信超时逻辑中使用。调整这些参数不会改变现有 CAN 收发行为。

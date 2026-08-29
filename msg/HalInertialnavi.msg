@@ -8,3 +8,4 @@ float32 longitude
 float32 east_velocity
 float32 north_velocity
 float32 sky_velocity
+uint8 connection_status  # 0=硬件断连, 1=硬件正常连接

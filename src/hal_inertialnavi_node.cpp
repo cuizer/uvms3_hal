@@ -63,9 +63,10 @@ public:
     HalInertialNaviNode(const std::string & node_name)
     : rclcpp_lifecycle::LifecycleNode(node_name)
     {
-        this->declare_parameter<std::string>("ins_port_name", "/dev/ttyTHS0"); 
-        this->declare_parameter<std::string>("dvl_port_name", "/dev/ttyTHS1"); 
+        this->declare_parameter<std::string>("ins_port_name", "/dev/ttyUART_485_422_B"); 
+        this->declare_parameter<std::string>("dvl_port_name", "/dev/ttyUART_485_422_A"); 
         cached_msg_.timestamp = 0;
+        cached_msg_.connection_status = 0;
     }
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &) override {
@@ -118,9 +119,10 @@ private:
 
     int ins_fd_ = -1;
     int dvl_fd_ = -1;
-    
+
     std::thread ins_thread_;
     std::atomic<bool> is_running_{false};
+    std::atomic<int64_t> last_ins_data_ns_{0};
 
     void dvl_callback(const hal::msg::HalDvl::SharedPtr msg) {
         if (dvl_fd_ < 0) return; 
@@ -148,7 +150,13 @@ private:
                 std::lock_guard<std::mutex> lock(msg_mutex_);
                 msg_to_publish = cached_msg_;
             }
-            // 只要时间戳不为0（表示至少解析成功过一次）就发布
+
+            int64_t now_ns = this->now().nanoseconds();
+            int64_t last_ns = last_ins_data_ns_.load();
+            if (last_ns == 0 || (now_ns - last_ns) > 2000000000ULL) {
+                msg_to_publish.connection_status = 0;
+            }
+
             if (msg_to_publish.timestamp != 0) {
                 ins_pub_->publish(msg_to_publish);
             }
@@ -156,11 +164,9 @@ private:
     }
 
     void parse_and_cache(const std::string& data, int64_t capture_time_ns) {
-        // 查找正文结束符
         size_t star_pos = data.find('*');
         if (star_pos == std::string::npos) return; 
 
-        // 截取帧头之后的部分
         size_t head_pos = data.find("$UZHDR");
         if (head_pos == std::string::npos) return;
 
@@ -171,27 +177,36 @@ private:
         
         while (std::getline(ss, token, ',')) tokens.push_back(token);
 
-        // 调试信息：如果收到数据但解析不出 tokens，可以在这里打印
         if (tokens.size() >= 10) {
             try {
                 std::lock_guard<std::mutex> lock(msg_mutex_);
-                // 优先使用接收时的系统纳秒时间戳，防止硬件时间字段解析错误导致节点不发消息
-                cached_msg_.timestamp = capture_time_ns; 
+                cached_msg_.timestamp = capture_time_ns;
+                cached_msg_.connection_status = 1;
+                last_ins_data_ns_.store(capture_time_ns); 
                 
-                // 索引建议重新核对硬件协议手册，这里沿用您的逻辑并做安全检查
-                cached_msg_.yaw       = (tokens.size() > 1) ? std::stof(tokens[1]) : 0.0f;
-                cached_msg_.pitch     = (tokens.size() > 2) ? std::stof(tokens[2]) : 0.0f;
-                cached_msg_.roll      = (tokens.size() > 3) ? std::stof(tokens[3]) : 0.0f;
-                cached_msg_.latitude  = (tokens.size() > 4) ? std::stod(tokens[4]) : 0.0;
-                cached_msg_.longitude = (tokens.size() > 5) ? std::stod(tokens[5]) : 0.0;
-                cached_msg_.east_velocity  = (tokens.size() > 7) ? std::stof(tokens[7]) : 0.0f;
-                cached_msg_.north_velocity = (tokens.size() > 8) ? std::stof(tokens[8]) : 0.0f;
-                cached_msg_.sky_velocity   = (tokens.size() > 9) ? std::stof(tokens[9]) : 0.0f;
+                // 【修复】：严格按照 GI510 协议表 4.2 进行数组下标映射
+                cached_msg_.yaw       = (tokens.size() > 2) ? std::stof(tokens[2]) : 0.0f;  // Heading
+                cached_msg_.pitch     = (tokens.size() > 3) ? std::stof(tokens[3]) : 0.0f;  // Pitch
+                cached_msg_.roll      = (tokens.size() > 4) ? std::stof(tokens[4]) : 0.0f;  // Roll
+                cached_msg_.latitude  = (tokens.size() > 5) ? std::stod(tokens[5]) : 0.0;   // Latitude
+                cached_msg_.longitude = (tokens.size() > 6) ? std::stod(tokens[6]) : 0.0;   // Longitude
+
+                // 注意：tokens[7] 是深度 (Depth)，这里跳过，直接取第 8,9,10 个数据为速度
+                cached_msg_.east_velocity  = (tokens.size() > 8) ? std::stof(tokens[8]) : 0.0f;   // Ve
+                cached_msg_.north_velocity = (tokens.size() > 9) ? std::stof(tokens[9]) : 0.0f;   // Vn
+                cached_msg_.sky_velocity   = (tokens.size() > 10) ? std::stof(tokens[10]) : 0.0f; // Vu
                 
+                // 成功解析打印，测试成功后可注释
+                // RCLCPP_INFO(this->get_logger(), "【探针5】解析成功并缓存! Yaw: %.2f, Lat: %.6f", cached_msg_.yaw, cached_msg_.latitude);
+
             } catch (const std::exception& e) {
-                RCLCPP_WARN(this->get_logger(), "数据转换失败: %s", e.what());
+                // 如果抛出异常，说明某个字段的数据不是合法数字
+                RCLCPP_ERROR(this->get_logger(), "【探针4】致命错误：数据类型转换失败: %s", e.what());
             }
         }
+        // } else {
+        //     RCLCPP_WARN(this->get_logger(), "【探针】切分的字段数量不足！实际数量: %zu", tokens.size());
+        // }
     }
 
     void ins_thread_function() {
@@ -202,7 +217,14 @@ private:
             if (ins_fd_ < 0) {
                 std::string port = this->get_parameter("ins_port_name").as_string();
                 ins_fd_ = setup_native_uart(port, B460800);
-                if (ins_fd_ >= 0) RCLCPP_INFO(this->get_logger(), "惯导串口 %s 已打开", port.c_str());
+                if (ins_fd_ >= 0) {
+                    RCLCPP_INFO(this->get_logger(), "惯导串口 %s 已打开", port.c_str());
+                } else {
+                    // 【修复】：如果权限不足，每两秒打印一次报警，避免静默失败
+                    RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 2000, 
+                        "惯导串口 %s 打开失败！请检查连接或执行 sudo chmod 777 %s", 
+                        port.c_str(), port.c_str());
+                }
             }
             if (dvl_fd_ < 0) {
                 std::string port = this->get_parameter("dvl_port_name").as_string();
@@ -227,16 +249,32 @@ private:
                     int64_t capture_time_ns = this->now().nanoseconds();
                     buffer.append(read_buf, bytes_read);
                     
+                    // ================= [探针 1: 打印刚从底层读到的原始字节] =================
+                    // std::string raw_str(read_buf, bytes_read);
+                    // RCLCPP_INFO(this->get_logger(), "【探针1】底层收到 %d 字节数据: %s", bytes_read, raw_str.c_str());
+
                     size_t pos = 0;
-                    while ((pos = buffer.find("\r\n")) != std::string::npos) {
+                    // 【修复】：改为寻找 '\n'，兼容 '\r\n' 和只有 '\n' 的情况
+                    while ((pos = buffer.find('\n')) != std::string::npos) {
                         std::string line = buffer.substr(0, pos);
-                        buffer.erase(0, pos + 2);
+                        
+                        // 把末尾可能存在的 '\r' 削掉
+                        if (!line.empty() && line.back() == '\r') {
+                            line.pop_back(); 
+                        }
+                        
+                        buffer.erase(0, pos + 1); // 加上 '\n' 本身的长度1
                         
                         if (line.find("$UZHDR") != std::string::npos) {
+                            // ================= [探针 2: 确认进入解析流程] =================
+                            // RCLCPP_INFO(this->get_logger(), "【探针2】匹配到头部，整行数据为: %s", line.c_str());
                             parse_and_cache(line, capture_time_ns);
                         }
                     }
-                    if (buffer.size() > 4096) buffer.clear(); 
+                    if (buffer.size() > 4096) {
+                        RCLCPP_WARN(this->get_logger(), "【警告】Buffer满4096被清空！可能是换行符异常。当前Buffer: %s", buffer.c_str());
+                        buffer.clear(); 
+                    }
                 }
             }
         }
@@ -247,7 +285,10 @@ int main(int argc, char ** argv) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<HalInertialNaviNode>("hal_inertialnavi_node");
     
-    // 使用 MultiThreadedExecutor 以便在 Lifecycle 激活前也能响应部分服务
+    // // 【修复】：强制自动触发 Configure 和 Activate，摆脱手动 Lifecycle 激活的陷阱
+    // node->configure();
+    // node->activate();
+    
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node->get_node_base_interface());
     executor.spin();

@@ -1,0 +1,42 @@
+hal_cabinmotor_node:
+  ros__parameters:
+    can_interface: "can0"
+    expected_bitrate: 1000000
+    can_retry_count: 3
+    can_retry_interval_ms: 1000
+
+    control_period_ms: 10
+    state_publish_period_ms: 20
+    command_timeout_sec: 0.2
+    feedback_timeout_sec: 0.2
+    enable_confirmation_timeout_sec: 1.0
+
+    # 激活后或指令超时后，以当前反馈位置作为保持目标时使用的速度上限。
+    hold_velocity_limit: 0.05
+
+    stop_all_on_single_fault: true
+
+    # 岸上空载测试保护阈值；正式水下运行需依据实际要求重新确认。
+    max_mos_temperature: 55.0
+    max_rotor_temperature: 55.0
+
+    # 单电机测试版本仅启用设备ID 0x13。
+    motor_13:
+      name: "cabin_motor_13"
+      device_id: 19
+      master_id: 19
+
+      # 必须与调试助手中的 PMAX、VMAX、TMAX 完全一致。
+      feedback:
+        p_min: -12.5
+        p_max: 12.5
+        v_min: -45.0
+        v_max: 45.0
+        t_min: -18.0
+        t_max: 18.0
+
+      # 以下为首次空载测试占位限值，实机测试前应按机构安全范围修改。
+      mechanical:
+        position_min: -3.0
+        position_max: 3.0
+        velocity_max: 2.0

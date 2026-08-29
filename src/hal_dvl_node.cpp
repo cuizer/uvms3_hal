@@ -1,6 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "hal/msg/hal_dvl.hpp" 
+#include "hal/msg/hal_dvl_control.hpp"
 #include <thread>
 #include <mutex>
 #include <chrono>
@@ -8,19 +9,19 @@
 #include <string>
 #include <sstream> 
 #include <atomic>
+#include <condition_variable>
+#include <cstdint>
+#include <cerrno>
+#include <exception>
+#include <functional>
+#include <stdexcept>
 
-// 引入 Linux 底层串口所需的系统头文件
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
 #include <cstring>
 #include <sys/select.h> 
 
-/**
- * @brief 原生 Linux 串口初始化函数 
- * @param port_name 串口设备路径
- * @param baud_rate 波特率宏定义 (如 B115200)
- */
 int setup_native_uart(const std::string& port_name, speed_t baud_rate) {
     int fd = open(port_name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd == -1) return -1;
@@ -31,16 +32,10 @@ int setup_native_uart(const std::string& port_name, speed_t baud_rate) {
         return -1;
     }
 
-    // 【关键修改 1】强制将串口设为完全透传模式 (Raw Mode)
-    // 这一步会关闭底层的 ICRNL、ECHO、ICANON 等所有自动转换机制，确保读到的数据原汁原味
     cfmakeraw(&tty);
-
     cfsetospeed(&tty, baud_rate);
     cfsetispeed(&tty, baud_rate);
-
-    tty.c_cflag |= CREAD | CLOCAL; // 开启接收并忽略控制线
-
-    // 设置非阻塞读取
+    tty.c_cflag |= CREAD | CLOCAL; 
     tty.c_cc[VMIN]  = 0;
     tty.c_cc[VTIME] = 1;
 
@@ -64,14 +59,21 @@ public:
     HalDvlNode(const std::string & node_name)
     : rclcpp_lifecycle::LifecycleNode(node_name)
     {
-        this->declare_parameter<std::string>("port_name", "/dev/ttyUSB0");
+        this->declare_parameter<std::string>("port_name", "/dev/ttyUART_232_A");
         this->declare_parameter<int>("baud_rate", 115200);
+        this->declare_parameter<bool>("acoustic_enabled_on_start", false);
+        cached_msg_.modecontrol_cmd = ACOUSTIC_DISABLED;
+        cached_msg_.connection_status = 0;
     }
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &) override {
         dvl_pub_ = this->create_publisher<hal::msg::HalDvl>("/hal/dvl", 10);
         publish_timer_ = this->create_wall_timer(
             20ms, std::bind(&HalDvlNode::publish_timer_callback, this));
+        dvl_control_sub_ = this->create_subscription<hal::msg::HalDVLControl>(
+            "/hal/dvlcontrol",
+            rclcpp::QoS(10).reliable(),
+            std::bind(&HalDvlNode::dvl_control_callback, this, std::placeholders::_1));
         return CallbackReturn::SUCCESS;
     }
 
@@ -97,6 +99,7 @@ public:
     CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override {
         dvl_pub_.reset();
         publish_timer_.reset();
+        dvl_control_sub_.reset();
         return CallbackReturn::SUCCESS;
     }
 
@@ -114,6 +117,7 @@ public:
 private:
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<hal::msg::HalDvl>> dvl_pub_;
     rclcpp::TimerBase::SharedPtr publish_timer_;
+    rclcpp::Subscription<hal::msg::HalDVLControl>::SharedPtr dvl_control_sub_;
 
     hal::msg::HalDvl cached_msg_;
     std::mutex msg_mutex_;
@@ -121,6 +125,165 @@ private:
     int serial_fd_ = -1;
     std::thread dvl_thread_;
     std::atomic<bool> is_running_{false};
+    std::atomic<int64_t> last_valid_data_ns_{0};
+    std::atomic<bool> acoustic_enabled_{false};
+
+    enum class CmdStatus { IDLE, WAITING, SUCCESS, FAILED };
+    CmdStatus cmd_status_ = CmdStatus::IDLE;
+    std::mutex cmd_mutex_;
+    std::condition_variable cmd_cv_;
+
+    // HalDVLControl.msg 仅包含: uint8 dvlcontrol_cmd
+    // 控制协议值在节点内部定义，不依赖 msg 中不存在的 CMD_* 常量。
+    // 与现有 DVL 声学状态编码保持一致:
+    //   0 -> 开启声学
+    //   1 -> 关闭声学
+    //   2 -> 查询当前声学状态
+    static constexpr uint8_t ACOUSTIC_ENABLED = 0;
+    static constexpr uint8_t ACOUSTIC_DISABLED = 1;
+    static constexpr uint8_t DVL_CMD_ENABLE = 0;
+    static constexpr uint8_t DVL_CMD_DISABLE = 1;
+    static constexpr uint8_t DVL_CMD_QUERY = 2;
+
+    enum class ControlResult : uint8_t {
+        Ok = 0x00,
+        Invalid = 0x01,
+        SerialNotReady = 0x02,
+        WriteFailed = 0x03,
+        AckTimeout = 0x04,
+        Nack = 0x05,
+        Busy = 0x06,
+    };
+
+    const char * control_result_to_string(ControlResult result) const {
+        switch (result) {
+            case ControlResult::Ok:
+                return "ok";
+            case ControlResult::Invalid:
+                return "invalid";
+            case ControlResult::SerialNotReady:
+                return "serial_not_ready";
+            case ControlResult::WriteFailed:
+                return "write_failed";
+            case ControlResult::AckTimeout:
+                return "ack_timeout";
+            case ControlResult::Nack:
+                return "nack";
+            case ControlResult::Busy:
+                return "busy";
+            default:
+                return "unknown";
+        }
+    }
+
+    uint8_t acoustic_modecontrol_cmd() const {
+        return acoustic_enabled_.load() ? ACOUSTIC_ENABLED : ACOUSTIC_DISABLED;
+    }
+
+    void dvl_control_callback(const hal::msg::HalDVLControl::SharedPtr msg) {
+        const uint8_t cmd = msg->dvlcontrol_cmd;
+
+        if (cmd == DVL_CMD_QUERY) {
+            RCLCPP_INFO(this->get_logger(), "DVL 声学状态查询: %s",
+                acoustic_enabled_.load() ? "开启" : "关闭");
+            return;
+        }
+
+        if (cmd != DVL_CMD_DISABLE && cmd != DVL_CMD_ENABLE) {
+            RCLCPP_WARN(this->get_logger(),
+                "DVL 控制指令非法: %u (有效值: enable=%u, disable=%u, query=%u)",
+                static_cast<unsigned int>(cmd),
+                static_cast<unsigned int>(DVL_CMD_ENABLE),
+                static_cast<unsigned int>(DVL_CMD_DISABLE),
+                static_cast<unsigned int>(DVL_CMD_QUERY));
+            return;
+        }
+
+        ControlResult result = ControlResult::Ok;
+        const bool enable = (cmd == DVL_CMD_ENABLE);
+        const bool ok = set_acoustic_mode_wait(enable, result);
+        RCLCPP_INFO(this->get_logger(), "DVL 声学%s结果: %s",
+            enable ? "开启" : "关闭",
+            ok ? "ok" : control_result_to_string(result));
+    }
+
+    bool set_acoustic_mode_wait(bool enable, ControlResult &result) {
+        if (serial_fd_ < 0) {
+            result = ControlResult::SerialNotReady;
+            return false;
+        }
+
+        std::string cmd = enable ? "wcs,1500,,y,n\n" : "wcs,1500,,n,n\n";
+
+        std::unique_lock<std::mutex> lock(cmd_mutex_);
+        if (cmd_status_ == CmdStatus::WAITING) {
+            result = ControlResult::Busy;
+            return false;
+        }
+        cmd_status_ = CmdStatus::WAITING;
+        
+        ssize_t bytes_written = write(serial_fd_, cmd.c_str(), cmd.length());
+        if (bytes_written < 0) {
+            cmd_status_ = CmdStatus::IDLE;
+            result = ControlResult::WriteFailed;
+            return false;
+        }
+
+        bool signaled = cmd_cv_.wait_for(lock, 2s, [this]{ return cmd_status_ != CmdStatus::WAITING; });
+
+        if (!signaled) {
+            cmd_status_ = CmdStatus::IDLE;
+            result = ControlResult::AckTimeout;
+            RCLCPP_WARN(this->get_logger(), "DVL 模式切换指令响应超时");
+            return false;
+        }
+
+        const bool success = (cmd_status_ == CmdStatus::SUCCESS);
+        cmd_status_ = CmdStatus::IDLE;
+        if (!success) {
+            result = ControlResult::Nack;
+            return false;
+        }
+
+        acoustic_enabled_.store(enable);
+        if (!enable) {
+            mark_dvl_unavailable();
+        }
+        result = ControlResult::Ok;
+        return true;
+    }
+
+    void send_startup_acoustic_mode() {
+        if (serial_fd_ < 0) return;
+
+        const bool enable_on_start =
+            this->get_parameter("acoustic_enabled_on_start").as_bool();
+        const std::string cmd = enable_on_start ? "wcs,1500,,y,n\n" : "wcs,1500,,n,n\n";
+        const ssize_t bytes_written = write(serial_fd_, cmd.c_str(), cmd.length());
+        if (bytes_written < 0) {
+            RCLCPP_WARN(this->get_logger(), "DVL 启动声学模式配置下发失败: %s", strerror(errno));
+            return;
+        }
+
+        acoustic_enabled_.store(enable_on_start);
+        if (!enable_on_start) {
+            mark_dvl_unavailable();
+        }
+        RCLCPP_INFO(this->get_logger(),
+            "DVL 启动默认声学状态: %s (已下发 wcs 配置)",
+            enable_on_start ? "开启" : "关闭");
+    }
+
+    void mark_dvl_unavailable() {
+        std::lock_guard<std::mutex> lock(msg_mutex_);
+        cached_msg_.timestamp = this->now().nanoseconds();
+        cached_msg_.modecontrol_cmd = acoustic_modecontrol_cmd();
+        cached_msg_.connection_status = 0;
+        cached_msg_.velocity_x = 0.0f;
+        cached_msg_.velocity_y = 0.0f;
+        cached_msg_.velocity_z = 0.0f;
+        last_valid_data_ns_.store(0);
+    }
 
     void publish_timer_callback() {
         if (dvl_pub_->is_activated()) {
@@ -129,12 +292,24 @@ private:
                 std::lock_guard<std::mutex> lock(msg_mutex_);
                 msg_to_publish = cached_msg_;
             }
+
+            int64_t now_ns = this->now().nanoseconds();
+            int64_t last_ns = last_valid_data_ns_.load();
+            if (last_ns == 0 || (now_ns - last_ns) > 2000000000LL) {
+                msg_to_publish.connection_status = 0;
+            }
+            msg_to_publish.modecontrol_cmd = acoustic_modecontrol_cmd();
+
             dvl_pub_->publish(msg_to_publish);
         }
     }
 
     void parse_and_cache(const std::string& data, int64_t capture_time_ns) {
-        // 【关键修改 3】找到报文真正的起始位，剔除前方的乱码字节
+        if (!acoustic_enabled_.load()) {
+            mark_dvl_unavailable();
+            return;
+        }
+
         size_t start_idx = data.find("wrx");
         if (start_idx == std::string::npos) {
             start_idx = data.find("wrz");
@@ -188,6 +363,9 @@ private:
 
         std::lock_guard<std::mutex> lock(msg_mutex_);
         cached_msg_.timestamp = capture_time_ns;
+        cached_msg_.modecontrol_cmd = acoustic_modecontrol_cmd();
+        cached_msg_.connection_status = 1;
+        last_valid_data_ns_.store(capture_time_ns);
 
         if (is_valid) {
             cached_msg_.velocity_x = vx;
@@ -219,7 +397,7 @@ private:
                         std::this_thread::sleep_for(1s);
                         continue;
                     }
-                    //RCLCPP_INFO(this->get_logger(), "DVL 原生串口已打开: %s", port.c_str());
+                    send_startup_acoustic_mode();
                 }
 
                 fd_set read_fds;
@@ -228,7 +406,7 @@ private:
 
                 struct timeval tv;
                 tv.tv_sec = 0;
-                tv.tv_usec = 5000; // 5ms 超时
+                tv.tv_usec = 5000; 
 
                 int ret = select(serial_fd_ + 1, &read_fds, NULL, NULL, &tv);
 
@@ -242,26 +420,42 @@ private:
                         if (errno != EAGAIN && errno != EWOULDBLOCK) {
                             throw std::runtime_error("原生 read 失败");
                         }
-                    } else if (bytes_read > 0) {
+                    } 
+                    else if (bytes_read == 0) {
+                         throw std::runtime_error("检测到虚拟串口 EOF (对端未连接或已断开)");
+                    }
+                    else {
                         int64_t capture_time_ns = this->now().nanoseconds();
                         buffer.append(read_buf, bytes_read);
-                        
                         size_t pos = 0;
                         size_t processed_pos = 0;
                         
-                        // 【关键修改 2】仅依据 '\n' 拆分字符串，提升鲁棒性
                         while ((pos = buffer.find('\n', processed_pos)) != std::string::npos) {
                             std::string line = buffer.substr(processed_pos, pos - processed_pos);
                             processed_pos = pos + 1; 
 
-                            // 如果末尾带有 '\r'，将其弹出剥离
                             if (!line.empty() && line.back() == '\r') {
                                 line.pop_back();
                             }
+                            RCLCPP_INFO(this->get_logger(), "=== [串口原始数据捕捉] ===: '%s'", line.c_str());
+                            if (line.find("wra") != std::string::npos) {
+                                std::lock_guard<std::mutex> lock(cmd_mutex_);
+                                if (cmd_status_ == CmdStatus::WAITING) {
+                                    cmd_status_ = CmdStatus::SUCCESS;
+                                    cmd_cv_.notify_all();
+                                }
+                                continue;
+                            } 
+                            else if (line.find("wrn") != std::string::npos) {
+                                std::lock_guard<std::mutex> lock(cmd_mutex_);
+                                if (cmd_status_ == CmdStatus::WAITING) {
+                                    cmd_status_ = CmdStatus::FAILED;
+                                    cmd_cv_.notify_all();
+                                }
+                                continue; 
+                            }
                             
-                            // 放宽要求，不再强求下标0
                             if (line.find("wrx") != std::string::npos || line.find("wrz") != std::string::npos) {
-                                RCLCPP_INFO(this->get_logger(), "收到原始合法串口数据 -> %s", line.c_str());
                                 parse_and_cache(line, capture_time_ns); 
                             }
                         }

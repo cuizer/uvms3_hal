@@ -1,0 +1,15 @@
+/hal:
+  ros__parameters:
+    camera_fps: 30.0
+    color_resolution: "THE_1080_P"
+    color_width: 1280
+    color_height: 720
+    mono_resolution: "THE_720_P"
+    stereo_confidence_threshold: 200
+    stereo_left_right_check: true
+    stereo_extended_disparity: false
+    stereo_subpixel: true
+    device_mx_id: ""
+    grab_period_ms: 33
+    frame_id_left: "oak_rgb_camera_optical_frame"
+    frame_id_depth: "oak_rgb_camera_optical_frame"

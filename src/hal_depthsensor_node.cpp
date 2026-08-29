@@ -1,7 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "hal/msg/hal_depthsensor.hpp" 
-#include <std_msgs/msg/string.hpp>   // 【新增】用于发布连接状态
 #include <cmath> 
 #include <algorithm> // 包含 std::max
 #include <atomic>    // 包含 std::atomic
@@ -67,7 +66,7 @@ public:
     HalDepthSensorNode(const std::string & node_name)
     : rclcpp_lifecycle::LifecycleNode(node_name)
     {
-        this->declare_parameter<std::string>("can_interface", "can0");
+        this->declare_parameter<std::string>("can_interface", "can2");
         
         // 初始化缓存消息，防止初始时刻发送未定义的随机内存值
         cached_msg_.depth_1 = 0.0f;
@@ -76,14 +75,12 @@ public:
         cached_msg_.temp_2 = 0.0f;
         cached_msg_.depth_avg = 0.0f;
         cached_msg_.timestamp = 0;
+        cached_msg_.connection_status = 0;
     }
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &) override {
         RCLCPP_INFO(get_logger(), "配置中... 初始化水深传感器发布者 (固定 50Hz)。");
-        depth_pub_ = this->create_publisher<hal::msg::HalDepthsensor>("/hal/depthsenor", 10);
-        
-        // 【新增】初始化状态发布者
-        status_pub_ = this->create_publisher<std_msgs::msg::String>("hal_depthsensor_status", 10);
+        depth_pub_ = this->create_publisher<hal::msg::HalDepthsensor>("/hal/depthsensor", 10);
         
         // 创建 50Hz (20ms) 定时器，专门负责数据发布
         publish_timer_ = this->create_wall_timer(
@@ -109,18 +106,15 @@ public:
         send_nmt_wakeup();
 
         depth_pub_->on_activate();
-        status_pub_->on_activate(); // 【新增】激活状态发布者
-        
+
         is_running_ = true;
-        is_connected_ = false; // 初始设定为断开，等待接收到第一帧数据后触发连接发布
         can_thread_ = std::thread(&HalDepthSensorNode::can_thread_function, this);
         return LifecycleNode::on_activate(state);
     }
 
     CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override {
         depth_pub_->on_deactivate();
-        status_pub_->on_deactivate(); // 【新增】去激活状态发布者
-        
+
         is_running_ = false;
         if (can_thread_.joinable()) can_thread_.join();
         
@@ -133,7 +127,6 @@ public:
 
     CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override {
         depth_pub_.reset();
-        status_pub_.reset(); // 【新增】清理状态发布者
         publish_timer_.reset();
         watchdog_timer_.reset(); 
         return CallbackReturn::SUCCESS;
@@ -152,8 +145,7 @@ public:
 
 private:
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<hal::msg::HalDepthsensor>> depth_pub_;
-    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::String>> status_pub_; // 【新增】状态发布者指针
-    
+
     rclcpp::TimerBase::SharedPtr publish_timer_;
     rclcpp::TimerBase::SharedPtr watchdog_timer_; 
 
@@ -163,22 +155,10 @@ private:
     int can_socket_ = -1;
     std::thread can_thread_;
     std::atomic<bool> is_running_{false};
-    
-    // 【新增】连接状态标志位，使用 atomic 保证多线程安全
-    std::atomic<bool> is_connected_{false}; 
 
     // 记录两个传感器是否更新过数据，用于计算平均值
     bool has_data_1_ = false;
     bool has_data_2_ = false;
-
-    // 【新增】发布连接状态的工具函数
-    void publish_status(const std::string& state_str) {
-        if (status_pub_ && status_pub_->is_activated()) {
-            std_msgs::msg::String msg;
-            msg.data = state_str;
-            status_pub_->publish(msg);
-        }
-    }
 
     // 封装好的唤醒指令函数
     void send_nmt_wakeup() {
@@ -208,14 +188,12 @@ private:
             last_time = cached_msg_.timestamp;
         }
 
-        // 判断：从未收到数据(0)，或者距离上次收到数据超过 2 秒 (2,000,000,000 纳秒)
+        // 判断：从未收到数据(0)，或者距离上次收到数据超过 2 秒
         if (last_time == 0 || (current_time - last_time) > 2000000000ULL) {
-            
-            // 【新增状态逻辑】如果之前是连接状态，现在断开了，只触发一次发布
-            if (is_connected_) {
-                is_connected_ = false;
-                publish_status("DISCONNECTED");
-                RCLCPP_ERROR(this->get_logger(), "触发看门狗！未收到水深数据超时，传感器已断开。");
+            // 通过消息字段上报断连状态
+            {
+                std::lock_guard<std::mutex> lock(msg_mutex_);
+                cached_msg_.connection_status = 0;
             }
             
             // 下方保留原有的尝试重连机制
@@ -295,17 +273,11 @@ private:
                         continue;
                     }
 
-                    // 【新增状态逻辑】只要成功读出合法数据，就检查并恢复连接状态
-                    if (!is_connected_) {
-                        is_connected_ = true;
-                        publish_status("CONNECTED");
-                        RCLCPP_INFO(this->get_logger(), "传感器已恢复连接，收到有效数据。");
-                    }
-
-                    // 5. 获取锁，更新缓存，供 50Hz 定时器发布
+                    // 只要成功读出合法数据，更新连接状态
                     {
                         std::lock_guard<std::mutex> lock(msg_mutex_);
                         cached_msg_.timestamp = this->now().nanoseconds();
+                        cached_msg_.connection_status = 1;
                         
                         if (frame.can_id == 0x181) {
                             cached_msg_.depth_1 = depth_val;

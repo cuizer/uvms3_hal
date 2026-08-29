@@ -2,31 +2,40 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>hal</name>
-
-
   <version>0.0.1</version>
-  <description>UUV Hardware Abstraction Layer (Antenna, Light, and Battery)</description>
-  <maintainer email="user@todo.todo">user</maintainer>
+  <!-- 整合两边的描述信息，使其更加全面 -->
+  <description>UVMS hardware abstraction layer, lifecycle-managed motion control, sensors, antenna, light, battery and manipulator interfaces</description>
+  <!-- 使用团队维护信息替代个人占位符 -->
+  <maintainer email="uvms-maintainers@example.invalid">UVMS Local Development Team</maintainer>
   <license>Apache-2.0</license>
 
+  <!-- 编译工具依赖 -->
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
 
+  <!-- 接口生成与执行依赖 -->
   <build_depend>rosidl_default_generators</build_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
   <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <!-- 统一的基础依赖包 -->
   <depend>rclcpp</depend>
   <depend>std_srvs</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>lifecycle_msgs</depend>
   <depend>std_msgs</depend>
   <depend>builtin_interfaces</depend>
-   <exec_depend>rosidl_default_runtime</exec_depend>
-  <member_of_group>rosidl_interface_packages</member_of_group>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>cv_bridge</depend>
 
+  <!-- 测试依赖项（加入了右边版本新增的 python3 依赖） -->
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-
+  <test_depend>python3</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

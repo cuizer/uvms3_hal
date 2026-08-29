@@ -333,7 +333,7 @@ class PowerHalNode : public rclcpp_lifecycle::LifecycleNode
 public:
   explicit PowerHalNode(const std::string & node_name)
   : rclcpp_lifecycle::LifecycleNode(node_name),
-    can_interface_("can0"),
+    can_interface_("can2"),
     simulation_mode_(false),
     safe_state_(false),
     last_comm_time_(this->now())

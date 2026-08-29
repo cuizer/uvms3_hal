@@ -1,0 +1,4 @@
+byte cmd
+---
+bool success
+string message

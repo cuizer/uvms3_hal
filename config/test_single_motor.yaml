@@ -1,0 +1,20 @@
+/**:
+  ros__parameters:
+    can_interface: "can0"
+    motor_can_id: 1
+    use_standard_can_id: true
+    arm_side: "left"
+    base_frame: "base_link"       # 必加
+    ee_frame: "ee_link"           # 必加
+    arm_name: "arm"
+    publish_rate_hz: 50.0
+    debug_mode: true
+    require_initial_pose_before_activate: false
+    fault_stop_on_comm_loss: true
+    joint_names: ["joint1"]
+    joint.position_limit_min: [-3.14]
+    joint.position_limit_max: [3.14]
+    joint.max_velocity: [1.0]
+    safety.max_current: 500.0
+    safety.max_temperature: 80.0
+    safety.communication_timeout_sec: 0.5

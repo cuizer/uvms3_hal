@@ -95,7 +95,7 @@ struct BatteryStatusData
 class CanInterface
 {
 public:
-  CanInterface(const std::string & can_interface = "can0");
+  CanInterface(const std::string & can_interface = "can4");
   ~CanInterface();
 
   bool init();
