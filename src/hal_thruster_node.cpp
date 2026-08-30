@@ -69,9 +69,21 @@ public:
         is_estopped_ = false; 
         is_emergency_ascending_ = false;
 
+        // 激活时清空主推和辅推历史状态，避免重新激活后短时间发布旧数据
+        real_main_rpm_.store(0);
+        real_main_current_raw_.store(0);
+        real_main_voltage_.store(0);
+        real_main_fault_.store(0);
+
         for (int i = 0; i < 5; ++i) {
             aux_target_pct_[i].store(0.0);
-            last_seen_ms_[i].store(0); 
+            aux_rpm_[i].store(0);
+            aux_current_[i].store(0.0f);
+            aux_voltage_[i].store(0);
+            aux_temp_[i].store(0);
+            aux_status_machine_[i].store(0);
+            aux_fault_[i].store(0);
+            last_seen_ms_[i].store(0);
         }
         
         keep_running_ = false; 
@@ -118,11 +130,21 @@ public:
 
 private:
     // --- 常量定义 ---
-    const uint32_t MAIN_THRUSTER_ID = 0x06; 
-    const int64_t ONLINE_TIMEOUT_MS = 4000; // 2秒未收到反馈判定为离线
+    // 主推（逻辑推进器1）实际控制 CAN ID 为 0x301；按原协议 0x300+节点号 / 0x280+节点号，
+    // 对应节点号为 1，因此反馈通常为 0x281。接收端同时兼容 0x301 回传。
+    const uint32_t MAIN_THRUSTER_CAN_ID = 0x301;
+    const uint32_t MAIN_THRUSTER_RX_ID = 0x281;
+    const int64_t ONLINE_TIMEOUT_MS = 4000; // 4秒未收到反馈判定为离线
     
-    // 实际使用的 5 个辅推电调 ID：1、2、3、4、5；主推 ID 为 6
-    const std::array<uint8_t, 5> ACTIVE_AUX_IDS = {1, 2, 3, 4, 5};
+    // 推进器逻辑编号与实际硬件映射：
+    // 推进器1 = 主推  -> CAN ID 0x301
+    // 推进器2 = 辅推1 -> ESC ID2
+    // 推进器3 = 辅推2 -> ESC ID3
+    // 推进器4 = 辅推3 -> ESC ID4
+    // 推进器5 = 辅推4 -> ESC ID5
+    // 推进器6 = 辅推5 -> ESC ID6
+    // 因此内部 5 路辅推数组 index 0~4 分别对应逻辑推进器2~6。
+    const std::array<uint8_t, 5> ACTIVE_AUX_IDS = {2, 3, 4, 5, 6};
 
     // --- 状态控制变量 ---
     std::atomic<bool> is_estopped_{false}; 
@@ -141,7 +163,7 @@ private:
     std::atomic<int32_t> real_main_voltage_{0};     
     std::atomic<uint32_t> real_main_fault_{0};
     
-    // --- 数据缓存：5 路辅助推进器 (基于内部 Index = 0~4 访问) ---
+    // --- 数据缓存：5 路辅助推进器（Index 0~4 对应逻辑推进器2~6 / ESC ID2~6）---
     std::array<std::atomic<double>, 5> aux_target_pct_{};
     std::array<std::atomic<int16_t>, 5> aux_rpm_{};
     std::array<std::atomic<float>, 5>   aux_current_{};
@@ -160,7 +182,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
 
     // --- 辅助工具：CAN ID 映射为内存数组 Index ---
-    // 返回 -1 表示该 ID 不属于工作状态的辅推
+    // 输入实际 ESC ID，返回辅推数组索引；ID2~ID6 -> index0~4，其他返回 -1
     int get_aux_index(uint8_t aux_id) {
         for (size_t i = 0; i < ACTIVE_AUX_IDS.size(); ++i) {
             if (ACTIVE_AUX_IDS[i] == aux_id) return static_cast<int>(i);
@@ -254,7 +276,7 @@ private:
 
         // 1. 正转
         if (is_main_thruster) {
-            set_thruster_rpm_hardware(MAIN_THRUSTER_ID, test_thrust_pct);
+            set_thruster_rpm_hardware(MAIN_THRUSTER_CAN_ID, test_thrust_pct);
         } else {
             for (int i = 0; i < 5; ++i) aux_target_pct_[i].store(test_thrust_pct);
         }
@@ -262,7 +284,7 @@ private:
 
         // 2. 反转
         if (is_main_thruster) {
-            set_thruster_rpm_hardware(MAIN_THRUSTER_ID, -test_thrust_pct);
+            set_thruster_rpm_hardware(MAIN_THRUSTER_CAN_ID, -test_thrust_pct);
         } else {
             for (int i = 0; i < 5; ++i) aux_target_pct_[i].store(-test_thrust_pct);
         }
@@ -270,7 +292,7 @@ private:
 
         // 3. 停机
         if (is_main_thruster) {
-            set_thruster_rpm_hardware(MAIN_THRUSTER_ID, 0.0);
+            set_thruster_rpm_hardware(MAIN_THRUSTER_CAN_ID, 0.0);
         } else {
             for (int i = 0; i < 5; ++i) aux_target_pct_[i].store(0.0);
         }
@@ -279,7 +301,7 @@ private:
         
     void execute_emergency_ascent() {
         is_emergency_ascending_ = true;
-        set_thruster_rpm_hardware(MAIN_THRUSTER_ID, 0.0);
+        set_thruster_rpm_hardware(MAIN_THRUSTER_CAN_ID, 0.0);
         
         // 此处可结合 CI-AUV 的物理分布定向供能
         for (int i = 0; i < 5; ++i) { aux_target_pct_[i].store(0.0); }
@@ -302,19 +324,27 @@ private:
             return;
         }
 
-        // ID1~ID5：5 个辅推
-        for (size_t i = 0; i < 5; ++i) {
-            aux_target_pct_[i].store(msg->data[i]);
-        }
+        // 上层控制指令固定按照逻辑推进器 1、2、3、4、5、6 排列：
+        // msg->data[0] = 推进器1 = 主推  = CAN ID 0x301
+        // msg->data[1] = 推进器2 = 辅推1 = ESC ID2
+        // msg->data[2] = 推进器3 = 辅推2 = ESC ID3
+        // msg->data[3] = 推进器4 = 辅推3 = ESC ID4
+        // msg->data[4] = 推进器5 = 辅推4 = ESC ID5
+        // msg->data[5] = 推进器6 = 辅推5 = ESC ID6
 
-        // ID6：主推
+        // 推进器1：主推
         set_thruster_rpm_hardware(
-            MAIN_THRUSTER_ID,
-            msg->data[5]);
+            MAIN_THRUSTER_CAN_ID,
+            msg->data[0]);
+
+        // 推进器2~6：5 路辅推，内部 index 0~4 对应 ESC ID2~ID6
+        for (size_t i = 0; i < 5; ++i) {
+            aux_target_pct_[i].store(msg->data[i + 1]);
+        }
     }
 
     void stop_all_thrusters() {
-        set_thruster_rpm_hardware(MAIN_THRUSTER_ID, 0.0); 
+        set_thruster_rpm_hardware(MAIN_THRUSTER_CAN_ID, 0.0); 
         for (int i = 0; i < 5; ++i) {
             aux_target_pct_[i].store(0.0);
         }
@@ -345,7 +375,7 @@ private:
         // 厂家协议固定分组：
         // 0x200 → 电调 ID0~ID3
         // 0x201 → 电调 ID4~ID7
-        // 本机实际使用辅推 ID1~ID5，因此 ID0、ID6、ID7 槽位仅写停止值
+        // 本机实际使用辅推 ID2~ID6，因此 ID0、ID1、ID7 槽位写停止值
         for (int group = 0; group < 2; ++group) {
 
             struct can_frame frame;
@@ -376,7 +406,7 @@ private:
 
                 } else {
 
-                    // ID0、ID6、ID7 不属于当前 5 个辅推，保持原逻辑写停止值 1000
+                    // ID0、ID1、ID7 不属于当前 5 个辅推，写停止值 1000
                     cmd_word = 1000;
                 }
 
@@ -402,7 +432,7 @@ private:
             }
         }
     }
-    void set_thruster_rpm_hardware(uint32_t target_node_id, double thrust_percentage) {
+    void set_thruster_rpm_hardware(uint32_t target_can_id, double thrust_percentage) {
         int fd;
         {
             std::lock_guard<std::mutex> lock(can_socket_mutex_);
@@ -413,7 +443,8 @@ private:
         if (thrust_percentage > 100.0) thrust_percentage = 100.0;
         if (thrust_percentage < -100.0) thrust_percentage = -100.0;
     
-        uint32_t can_id = 0x300 + target_node_id;
+        // target_can_id 直接传入实际主推 CAN ID（0x301），不再重复加 0x300
+        uint32_t can_id = target_can_id;
         int32_t target_thrust = static_cast<int32_t>(thrust_percentage);
         struct can_frame frame;
         frame.can_id = can_id; 
@@ -439,7 +470,9 @@ private:
     // --- 纯净的 50Hz 遥测数据截获 ---
     void can_receive_loop() {
         struct can_frame frame;
-        uint32_t target_main_rx_id = 0x280 + MAIN_THRUSTER_ID;
+        // 主推（逻辑推进器1）控制 ID 为 0x301；按原协议其标准反馈 ID 为 0x281。
+        // 部分固件也可能直接用 0x301 回传，因此下面同时兼容两种情况。
+        uint32_t target_main_rx_id = MAIN_THRUSTER_RX_ID;
 
         while (keep_running_) {
             int current_fd;
@@ -475,7 +508,7 @@ private:
                 uint32_t clean_id = frame.can_id & CAN_SFF_MASK;
                 
                 // 1. 主推解析
-                if (clean_id == target_main_rx_id && frame.can_dlc == 8) {
+                if ((clean_id == target_main_rx_id || clean_id == MAIN_THRUSTER_CAN_ID) && frame.can_dlc == 8) {
                     int32_t value = (frame.data[4] << 24) | (frame.data[5] << 16) | (frame.data[6] << 8) | frame.data[7];
                     if (frame.data[0] == 0x51) {
                         switch (frame.data[1]) {
@@ -489,7 +522,9 @@ private:
                 }
                 
                 // 2. 辅推 50Hz 自主流解析 (依赖映射函数精准过滤无关报文)
-                else if (clean_id >= 0x301 && clean_id <= 0x305 && frame.can_dlc == 8) {
+                else if (clean_id >= 0x302 && clean_id <= 0x306 && frame.can_dlc == 8) {
+                    // 辅推遥测 CAN ID = 0x300 + 电调编号。
+                    // 当前有效 ESC ID 为 2、3、4、5、6，对应逻辑推进器2~6。
                     uint8_t aux_id = clean_id - 0x300; 
                     int mem_idx = get_aux_index(aux_id);
                     
@@ -525,10 +560,10 @@ private:
 
         // 1. 仅对主推进行请求轮询
         switch (ticks % 4) {
-            case 0: request_thruster_status(MAIN_THRUSTER_ID, 0x51, 0x56); break; 
-            case 1: request_thruster_status(MAIN_THRUSTER_ID, 0x51, 0x43); break; 
-            case 2: request_thruster_status(MAIN_THRUSTER_ID, 0x51, 0x50); break; 
-            case 3: request_thruster_status(MAIN_THRUSTER_ID, 0x45, 0x46); break; 
+            case 0: request_thruster_status(MAIN_THRUSTER_CAN_ID, 0x51, 0x56); break; 
+            case 1: request_thruster_status(MAIN_THRUSTER_CAN_ID, 0x51, 0x43); break; 
+            case 2: request_thruster_status(MAIN_THRUSTER_CAN_ID, 0x51, 0x50); break; 
+            case 3: request_thruster_status(MAIN_THRUSTER_CAN_ID, 0x45, 0x46); break; 
         }
 
         // 2. 辅推指令以 100ms 周期下发即可（无需轮询反馈）
@@ -576,7 +611,7 @@ private:
         pub_aux_status_->publish(aux_msg);
     }
 
-    void request_thruster_status(uint32_t target_node_id, uint8_t cmd_byte1, uint8_t cmd_byte2) {
+    void request_thruster_status(uint32_t target_can_id, uint8_t cmd_byte1, uint8_t cmd_byte2) {
         int fd;
         {
             std::lock_guard<std::mutex> lock(can_socket_mutex_);
@@ -585,7 +620,8 @@ private:
         if (fd < 0) return;
         
         struct can_frame frame;
-        frame.can_id = 0x300 + target_node_id; 
+        // 主推（推进器1）这里直接使用实际 CAN ID 0x301
+        frame.can_id = target_can_id; 
         frame.can_dlc = 4; 
         frame.data[0] = cmd_byte1; frame.data[1] = cmd_byte2; frame.data[2] = 0x00; frame.data[3] = 0x00; 
         
