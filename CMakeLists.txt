@@ -163,6 +163,14 @@ ament_target_dependencies(hal_inertialnavi_node rclcpp rclcpp_lifecycle std_msgs
 add_executable(sensor_mock_node src/sensor_mock_node.cpp)
 ament_target_dependencies(sensor_mock_node rclcpp rclcpp_lifecycle std_msgs)
 
+
+add_executable(test_tailservo src/test_tailservo.cpp)
+ament_target_dependencies(test_tailservo rclcpp std_msgs)
+
+install(TARGETS
+  test_tailservo
+  DESTINATION lib/${PROJECT_NAME}
+)
 # ==============================================================================
 # 为所有需要自定义接口的节点绑定 rosidl 依赖
 # ==============================================================================
