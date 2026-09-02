@@ -23,6 +23,7 @@ find_package(lifecycle_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(Threads REQUIRED)
+find_package(depthai CONFIG REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GPIOD REQUIRED libgpiod)
@@ -64,6 +65,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HalModeControl.msg"
   "msg/HalRemoteControl.msg"
   "msg/HalDVLControl.msg"
+  "msg/HalAcoustic.msg"
   DEPENDENCIES std_msgs builtin_interfaces
 )
 
@@ -167,6 +169,16 @@ ament_target_dependencies(sensor_mock_node rclcpp rclcpp_lifecycle std_msgs)
 add_executable(test_tailservo src/test_tailservo.cpp)
 ament_target_dependencies(test_tailservo rclcpp std_msgs)
 
+#水通节点
+add_executable(hal_acoustic_node src/hal_acoustic_node.cpp)
+ament_target_dependencies(hal_acoustic_node rclcpp rclcpp_lifecycle std_msgs)
+
+# 双目相机 OAK-D-SR 节点
+add_executable(hal_binocamera_node src/hal_binocamera_node.cpp)
+ament_target_dependencies(hal_binocamera_node rclcpp   rclcpp_lifecycle   sensor_msgs)
+
+target_link_libraries(hal_binocamera_node   depthai::core)
+
 install(TARGETS
   test_tailservo
   DESTINATION lib/${PROJECT_NAME}
@@ -186,6 +198,8 @@ rosidl_target_interfaces(hal_thruster_node ${PROJECT_NAME} "rosidl_typesupport_c
 rosidl_target_interfaces(hal_depthsensor_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 rosidl_target_interfaces(hal_dvl_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 rosidl_target_interfaces(hal_inertialnavi_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
+rosidl_target_interfaces(hal_binocamera_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
+rosidl_target_interfaces(hal_acoustic_node ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 # ==============================================================================
 # 安装与导出配置
@@ -204,7 +218,9 @@ install(TARGETS
   hal_depthsensor_node
   hal_dvl_node
   hal_inertialnavi_node
+  hal_binocamera_node
   sensor_mock_node
+  hal_acoustic_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
