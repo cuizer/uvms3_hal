@@ -4,3 +4,4 @@ float32 tunnel3_para
 float32 tunnel4_para
 float32 tunnel5_para
 float32 tunnel6_para
+float32 tunnel7_depth

@@ -59,7 +59,7 @@ public:
     HalDvlNode(const std::string & node_name)
     : rclcpp_lifecycle::LifecycleNode(node_name)
     {
-        this->declare_parameter<std::string>("port_name", "/dev/ttyUART_232_A");
+        this->declare_parameter<std::string>("port_name", "/dev/ttyUART_232_C");
         this->declare_parameter<int>("baud_rate", 115200);
         this->declare_parameter<bool>("acoustic_enabled_on_start", false);
         cached_msg_.modecontrol_cmd = ACOUSTIC_DISABLED;

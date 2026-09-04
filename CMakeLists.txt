@@ -66,6 +66,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HalRemoteControl.msg"
   "msg/HalDVLControl.msg"
   "msg/HalAcoustic.msg"
+  "msg/HalLifecyclestatesControl.msg"
   DEPENDENCIES std_msgs builtin_interfaces
 )
 

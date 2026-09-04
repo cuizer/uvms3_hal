@@ -266,8 +266,8 @@ private:
                         buffer.erase(0, pos + 1); // 加上 '\n' 本身的长度1
                         
                         if (line.find("$UZHDR") != std::string::npos) {
-                            // ================= [探针 2: 确认进入解析流程] =================
-                            // RCLCPP_INFO(this->get_logger(), "【探针2】匹配到头部，整行数据为: %s", line.c_str());
+                            //================= [探针 2: 确认进入解析流程] =================
+                            RCLCPP_INFO(this->get_logger(), "【探针2】匹配到头部，整行数据为: %s", line.c_str());
                             parse_and_cache(line, capture_time_ns);
                         }
                     }

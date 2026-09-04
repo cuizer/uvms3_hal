@@ -115,7 +115,7 @@ public:
   explicit HalAcousticNode(const std::string & node_name)
   : rclcpp_lifecycle::LifecycleNode(node_name)
   {
-    declare_parameter<std::string>("port_name", "/dev/ttyUSB0");
+    declare_parameter<std::string>("port_name", "/dev/ttyUART_232_A");
     declare_parameter<int>("baud_rate", 19200);
     declare_parameter<int>("target_id", 0x00);
   }
