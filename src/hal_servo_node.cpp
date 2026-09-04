@@ -155,6 +155,8 @@ private:
     
     // [新增] 软件看门狗时间戳
     std::atomic<int64_t> last_valid_rx_time_{0};
+    int wd_fail_count_ = 0;   // 看门狗连续失败计数
+    bool wd_tripped_     = false; // 看门狗触发标志
 
     uint8_t current_poll_id_ = 0;
 
@@ -305,12 +307,26 @@ private:
         if (current_poll_id_ == 0) {
             int64_t current_timestamp = this->get_clock()->now().nanoseconds();
 
-            // [核心] 看门狗拦截：判断是否超过 100ms 未收到数据 (100,000,000 纳秒)
-            if (current_timestamp - last_valid_rx_time_.load() > 100000000) {
-                RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
-                    "⚠️ 严重警告：总线通信超时！舵机疑似掉线或断电。[看门狗触发] 已停止发布僵尸数据。");
-                // 方案 A：直接 return，切断 Topic 发布。上层节点将因为订阅超时而触发 Failsafe
-                return; 
+            // [核心] 看门狗: 超过 300ms 未收到任何回报帧才计一次失败, 连续 3 轮仍失败才判定掉线。
+            //   放宽原因: 高指令流量下舵机应答偶发延迟>100ms 属正常, 原 100ms/1 次即触发会误报。
+            constexpr int64_t WD_TIMEOUT_NS = 300000000LL;   // 300ms
+            constexpr int64_t WD_CONFIRM = 3;                // 连续确认次数 (每轮≈24ms)
+            if (current_timestamp - last_valid_rx_time_.load() > WD_TIMEOUT_NS) {
+                ++wd_fail_count_;
+                if (wd_fail_count_ >= WD_CONFIRM) {
+                    if (!wd_tripped_) {
+                        wd_tripped_ = true;
+                        RCLCPP_WARN(get_logger(),
+                            "⚠️ 总线通信超时(连续超300ms×3轮)：舵机疑似掉线或断电。已停止发布舵机状态，等待恢复。");
+                    }
+                    return;   // 确认掉线: 停止发布状态(恢复后自动续发)
+                }
+                return;       // 偶发延迟: 暂不发布本轮, 但未计满确认次数
+            }
+            wd_fail_count_ = 0;
+            if (wd_tripped_) {
+                wd_tripped_ = false;
+                RCLCPP_WARN(get_logger(), "舵机通信已恢复，继续发布舵机状态。");
             }
 
             // 数据依然新鲜，正常发布
